@@ -1,0 +1,20 @@
+# @package _global_
+# Minimal agent configuration for testing
+
+agents_config: null
+
+# Minimal team composition
+team_composition:
+  planning_team:
+    - principal_scientist
+  
+  implementation_team:
+    - implementation_engineer
+  
+  review_team:
+    - data_science_critic
+
+# Reduced agent behavior settings for faster testing
+planning_max_turns: 5
+implementation_max_turns: 25
+review_max_iterations: 1 

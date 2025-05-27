@@ -1,0 +1,32 @@
+[project]
+name = "bioagents"
+version = "0.1.0"
+description = "A framework for autonomous biomedical ML research agents"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "autogen-agentchat>=0.5.7",
+    "autogen-ext[docker,openai]>=0.5.7",
+    "hydra-core>=1.3.0",
+    "pydantic>=2.0.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "pyarrow>=12.0.0",
+    "pillow>=10.0.0",
+    "pyyaml>=6.0",
+    "docker>=6.0.0",
+    "python-dotenv>=1.0.0",
+    "scipy>=1.15.3",
+    "scikit-learn>=1.6.1",
+    "ipdb>=0.13.13",
+]
+
+[project.scripts]
+bioagents = "bioagents.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bioagents"]

@@ -1,0 +1,16 @@
+# @package _global_
+# CPU-only Docker configuration
+
+# Docker executor settings
+docker:
+  image: millerh1/bioagents:latest
+  timeout: 3600
+  work_dir: ${hydra:runtime.cwd}
+  
+# GPU configuration - disabled
+gpus: "none"
+
+# Docker device requests - no GPU
+device_requests:
+  gpu_enabled: false
+  capabilities: [] 

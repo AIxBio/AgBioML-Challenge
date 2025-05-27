@@ -1,0 +1,22 @@
+# @package _global_
+# Default agent configuration
+
+agents_config: null  # Path to custom agents.yaml, null uses default from src/bioagents/config/
+
+# Agent team configuration
+team_composition:
+  planning_team:
+    - principal_scientist
+    - bioinformatics_expert
+    - ml_expert
+  
+  implementation_team:
+    - implementation_engineer
+  
+  review_team:
+    - data_science_critic
+
+# Agent behavior settings
+planning_max_turns: 15
+implementation_max_turns: 75
+review_max_iterations: 3 

@@ -1,0 +1,22 @@
+# Default resource configuration for bioagents
+# This can be overridden for different deployments
+
+compute:
+  cpu:
+    cores: 4  # Default conservative estimate
+    memory_gb: 16  # Default memory in GB
+  gpu:
+    available: false  # Whether GPU is available
+    type: "none"  # GPU type (e.g., "A10", "V100", "T4")
+    memory_gb: 0  # GPU memory in GB
+    count: 0  # Number of GPUs
+  
+optimization_hints:
+  prefer_gpu: true  # Prefer GPU when available
+  min_batch_size: 32  # Minimum batch size for efficiency
+  max_batch_size: 1024  # Maximum batch size based on memory
+  parallel_workers: 4  # Number of parallel workers (matching CPU cores)
+  
+timeout:
+  code_execution: 300  # Default 5 minute timeout for code execution
+  docker_execution: 3600  # Default 1 hour timeout for docker 

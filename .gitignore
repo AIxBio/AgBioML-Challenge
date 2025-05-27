@@ -9,3 +9,6 @@ __pycache__/
 *.arrow
 tmp_code*
 lab_notebook.md
+*.egg-info
+outputs
+workdir

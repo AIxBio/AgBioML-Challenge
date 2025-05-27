@@ -1,0 +1,22 @@
+# High-performance resource configuration
+# For machines with significant compute resources
+
+compute:
+  cpu:
+    cores: 30
+    memory_gb: 220
+  gpu:
+    available: true
+    type: "A10"
+    memory_gb: 24
+    count: 1
+  
+optimization_hints:
+  prefer_gpu: true
+  min_batch_size: 256  # Larger batches for better GPU utilization
+  max_batch_size: 4096  # Can handle larger batches
+  parallel_workers: 8  # Don't use all cores to leave room for other processes
+  
+timeout:
+  code_execution: 300  # Still enforce reasonable timeouts
+  docker_execution: 3600 

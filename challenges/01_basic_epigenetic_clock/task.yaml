@@ -1,0 +1,214 @@
+name: basic_epigenetic_clock
+display_name: Basic Epigenetic Clock Development
+version: "1.0"
+
+task_description: |
+  Develop an accurate epigenetic clock model that predicts chronological age from DNA methylation data,
+  with the aim of achieving state-of-the-art performance while demonstrating comprehensive
+  machine learning practices including proper data splitting, model evaluation, and documentation.
+
+project_goal: |
+  Create a predictive model that accurately estimates chronological age from DNA methylation
+  beta values, achieving a Pearson correlation ≥ 0.9 and MAE < 10 years on the held-out test set.
+  
+  CRITICAL COMPLETION CRITERIA:
+  1. Test set performance: Pearson correlation ≥ 0.9 AND MAE < 10 years
+  2. Model checkpoint: Save the best-performing model with an accompanying inference script
+  3. Analysis report: Complete markdown report documenting research, methods, and results
+  4. Predictions file: Generate predictions.arrow for the held-out test set (REQUIRED for evaluation)
+  
+  The project is considered complete only when ALL criteria are met and the Principal Scientist
+  explicitly confirms completion by including "TASK_COMPLETE" in their message.
+
+project_context: |
+  DNA methylation is an epigenetic modification that changes predictably with age across the human lifespan.
+  By measuring methylation levels at specific CpG sites across the genome, we can build "epigenetic clocks"
+  that predict chronological age with remarkable accuracy. This has applications in:
+  - Forensic age estimation
+  - Health assessment and biological aging studies
+  - Longevity research
+  - Clinical assessment of aging-related diseases
+  
+  The data comes from multiple studies and tissues, requiring careful consideration of batch effects
+  and generalization across different contexts. The challenge involves analyzing methylation data to build
+  a regression model that accurately predicts age while handling the complexities of biological data.
+
+available_data:
+  agent_data:
+    - path: data/agent/betas.arrow
+      description: DNA methylation beta values (feature matrix) with samples as rows and CpG sites as columns
+    - path: data/agent/metadata.arrow
+      description: Sample metadata including chronological ages (target), tissue types, sex, and study IDs
+    - path: data/agent/betas_heldout.arrow
+      description: Held-out test set methylation data (features only, no labels provided)
+  eval_data:
+    - path: data/eval/betas_heldout.arrow
+      description: Held-out test set of methylation values (duplicate of agent version)
+    - path: data/eval/meta_heldout.arrow
+      description: Held-out test set metadata with true ages (NOT accessible to agents)
+
+data_completeness: |
+  IMPORTANT: All data necessary to complete this task has been provided. The agents MUST work with these files:
+  - betas.arrow and metadata.arrow contain all required information for training
+  - Sample IDs in both files match perfectly - there are NO missing mappings
+  - No additional data files, ID mapping files, or external resources are needed or should be requested
+  - The data is complete, properly formatted, and sufficient to achieve the performance criteria
+  
+  The data has been mined from several hundred DNA methylation studies. To assess generalization,
+  data should be split with respect to the study of origin when creating train/validation splits
+  from the provided training data. This prevents data leakage and ensures robust model evaluation.
+
+prediction_requirements: |
+  To complete the evaluation, you MUST:
+  1. Train your model using the training data (betas.arrow and metadata.arrow)
+  2. Generate predictions for the held-out test set using betas_heldout.arrow
+  3. Save predictions as 'predictions.arrow' in the working directory with:
+     - Column 'sample_id': Sample identifiers matching those in betas_heldout.arrow
+     - Column 'predicted_age': Your model's age predictions (float)
+  4. The predictions.arrow file is REQUIRED for evaluation - without it, your solution cannot be scored
+  
+  CRITICAL: The held-out test set (betas_heldout.arrow) contains the same samples as will be
+  used in evaluation. You must generate predictions for ALL samples in this file.
+
+autonomous_workflow:
+  approach: |
+    This project follows a collaborative, autonomous workflow where agents determine the best course
+    of action based on current project state. Agents are expected to:
+    1. Continuously assess project status through the lab notebook
+    2. Identify gaps and opportunities in the current research
+    3. Propose logical next steps based on scientific merit and feasibility
+    4. Make decisions collaboratively when alternatives exist
+    5. Document all decisions, findings, and lessons learned in the lab notebook
+  methodology: |
+    The development process should generally include these components (not necessarily in sequence):
+    - Exploratory data analysis with visualizations
+    - Data quality assessment and preprocessing
+    - Feature engineering and selection strategies
+    - Model selection with comparative analysis (at least 2-3 approaches)
+    - Hyperparameter tuning and optimization
+    - Performance evaluation with appropriate metrics
+    - Error analysis and iterative improvement
+  expected_outcomes:
+    - Clear documentation of data exploration findings
+    - Well-justified preprocessing and feature selection decisions
+    - Multiple model approaches with comparative analysis
+    - Final model with comprehensive evaluation metrics
+    - Critical assessment of model strengths and limitations
+    - Saved model checkpoint with inference script
+    - predictions.arrow file for held-out test set
+    - Analysis report in markdown format
+
+lab_notebook_guidelines: |
+  The lab notebook serves as the central coordination mechanism for the project.
+  Every entry should be dated and include:
+  - Current project status assessment
+  - Key decisions made and their rationale
+  - Results of analyses or experiments with specific metrics
+  - Visualizations and their interpretations
+  - Next steps with clear scientific justification
+  - Open questions or challenges encountered
+  
+  The lab notebook should maintain sufficient context for any agent to understand
+  the current state of the project, previous findings, and planned direction.
+
+reference:
+  data_splitting:
+    text: |
+      Critical guidelines for splitting biological data by study/dataset:
+      - Different studies have different protocols and equipment (major source of technical variance)
+      - All samples from the same study must stay together in the same split
+      - Verify NO overlap between train and validation datasets
+      - Document which datasets are assigned to which splits
+      - Include verification code that confirms zero dataset overlap
+  epigenetic_clocks:
+    text: |
+      Epigenetic clocks are regression models that predict age from DNA methylation data.
+      Key considerations include:
+      - CpG site selection (high-variance filtering, age correlation)
+      - Normalization methods for beta values
+      - Handling of tissue-specific effects
+      - Batch effect correction strategies
+      - Feature dimensionality reduction (PCA, selection methods)
+  evaluation_metrics:
+    text: |
+      Standard metrics include Pearson correlation, MAE, and RMSE.
+      - Primary metric: Pearson correlation (measures linear relationship)
+      - Secondary metric: MAE in years (interpretable error measure)
+      - Additional metrics: RMSE, R-squared, median absolute error
+      - Subgroup analysis: Performance by tissue type, age group, sex
+      - Visualization: Scatter plots, residual plots, error distributions
+
+evaluation:
+  process: |
+    Your predictions.arrow file will be evaluated against held-out labels that are
+    not accessible during development. The evaluation will:
+    1. Load your predictions from predictions.arrow
+    2. Match predictions with true ages by sample_id
+    3. Calculate Pearson correlation and MAE
+    4. Generate detailed evaluation report with subgroup analyses
+    
+    VERIFICATION REQUIREMENTS:
+    - Ensure predictions are generated for ALL samples in betas_heldout.arrow
+    - Verify the format matches the required schema (sample_id, predicted_age)
+  metrics:
+    - name: pearson_correlation
+      threshold: 0.9
+      dataset: test_set
+    - name: mae_years
+      threshold: 10.0
+      dataset: test_set
+  required_outputs:
+    - predictions.arrow (predictions for held-out test set - CRITICAL)
+    - model_checkpoint (saved model file with preprocessing components)
+    - inference_script.py (script to generate predictions on new data)
+    - evaluation_results.json (your own internal evaluation metrics)
+    - analysis_report.md (markdown report documenting methodology and results)
+
+model_preservation:
+  requirements: |
+    The final model MUST be preserved with a usable inference pipeline:
+    1. Model checkpoint including:
+       - Trained model weights/parameters
+       - Preprocessing transforms or scalers
+       - Feature selection information (which CpG sites were used)
+       - Model metadata (performance metrics, training date)
+    2. Inference script (inference_script.py) that:
+       - Loads the saved model and components
+       - Accepts standardized input data (arrow/CSV format)
+       - Preprocesses input data consistently
+       - Generates and returns age predictions
+       - Includes clear usage documentation
+    3. Documentation with:
+       - Instructions for using the inference script
+       - Input data format requirements
+       - Output format description
+       - Example usage command
+       - Software dependencies
+
+report_requirements:
+  structure: |
+    The analysis report should be comprehensive and include:
+    1. Executive Summary (key findings and performance metrics)
+    2. Introduction (problem statement and objectives)
+    3. Methods:
+       - Data description and preprocessing steps
+       - Feature selection approach
+       - Model architectures tested
+       - Training procedures
+    4. Results:
+       - Performance metrics (tables and figures)
+       - Model comparisons
+       - Subgroup analyses
+    5. Discussion:
+       - Interpretation of results
+       - Comparison with literature benchmarks
+       - Limitations and strengths
+       - Future improvements
+    6. Conclusion (key takeaways)
+    
+    All figures must be referenced in text with descriptive captions.
+
+docker:
+  gpu_required: false
+  base_image: millerh1/bioagents:latest
+  additional_packages: null 

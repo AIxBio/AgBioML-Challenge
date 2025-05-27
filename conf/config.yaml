@@ -1,0 +1,30 @@
+defaults:
+  - _self_
+  - agents: default
+  - docker: default
+  - resources: default
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+
+# Task-specific configuration (required)
+task_dir: ???  # Must be provided via command line
+
+# Agent configuration
+model: gpt-4.1
+max_iterations: 25
+
+# Run configuration
+dry_run: false
+
+# Hydra configuration for output directory management
+hydra:
+  run:
+    dir: ./outputs/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./outputs/multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
+  job:
+    chdir: true  # Change to the output directory
+    env_set:
+      PYTHONPATH: ${hydra:runtime.cwd}
+  verbose: false 

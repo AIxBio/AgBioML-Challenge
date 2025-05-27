@@ -1,0 +1,22 @@
+# Cloud GPU instance configuration
+# Typical for AWS/GCP/Azure GPU instances
+
+compute:
+  cpu:
+    cores: 8
+    memory_gb: 32
+  gpu:
+    available: true
+    type: "T4"  # Common cloud GPU
+    memory_gb: 16
+    count: 1
+  
+optimization_hints:
+  prefer_gpu: true
+  min_batch_size: 128
+  max_batch_size: 2048
+  parallel_workers: 4
+  
+timeout:
+  code_execution: 300
+  docker_execution: 3600 

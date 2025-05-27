@@ -1,0 +1,16 @@
+# @package _global_
+# Extended timeout Docker configuration for long-running tasks
+
+# Docker executor settings
+docker:
+  image: millerh1/bioagents:latest
+  timeout: 7200  # 2 hours
+  work_dir: ${hydra:runtime.cwd}
+  
+# GPU configuration
+gpus: "all"
+
+# Docker device requests
+device_requests:
+  gpu_enabled: true
+  capabilities: [["gpu"]] 
