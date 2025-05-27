@@ -47,8 +47,8 @@ def bioagents(cfg: DictConfig) -> None:
     # Load and validate task config
     task_config = load_and_validate_task(task_dir)
     
-    # Get Hydra's output directory
-    run_dir = Path.cwd()  # Hydra changes to output directory
+    # Get Hydra's actual output/run directory
+    run_dir = Path(hydra_cfg.runtime.output_dir)
     logger.info(f"Running in directory: {run_dir}")
     
     # Load agents configuration

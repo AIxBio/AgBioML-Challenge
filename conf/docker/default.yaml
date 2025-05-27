@@ -5,7 +5,7 @@
 docker:
   image: millerh1/bioagents:latest
   timeout: 3600
-  work_dir: ${hydra:runtime.cwd}
+  work_dir: ${hydra:runtime.output_dir}
   
 # GPU configuration
 gpus: "all"  # "all", "none", or comma-separated indices like "0,1,2"

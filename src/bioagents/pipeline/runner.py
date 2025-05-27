@@ -159,8 +159,12 @@ async def run_pipeline(
         docker_config = {
             "image": "millerh1/bioagents:latest",
             "timeout": 3600,
-            "work_dir": str(run_dir)
+            "work_dir": str(run_dir)  # This will be mounted as /workspace in container
         }
+    else:
+        # Ensure work_dir is set to run_dir if not provided
+        if "work_dir" not in docker_config:
+            docker_config["work_dir"] = str(run_dir)
     
     if team_config is None:
         team_config = {

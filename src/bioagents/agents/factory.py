@@ -109,9 +109,17 @@ def initialize_agents(
 
         **NOTE ABOUT FILE LOCATIONS**
         
-        All data files mentioned in the task description are available in the current working directory.
-        For example, if the task mentions "data/agent/betas.arrow", the file is actually at "./betas.arrow".
-        Always use relative paths from the current directory when accessing files.
+        You are executing code inside a Docker container where the working directory is /workspace.
+        All data files mentioned in the task description are available in this directory.
+        For example, if the task mentions "data/agent/betas.arrow", the file is at "/workspace/betas.arrow".
+        You can use either absolute paths (/workspace/filename) or relative paths (./filename or just filename).
+        Your current working directory is /workspace.
+
+        **NOTE ABOUT OUTPUT FILES**
+        
+        All output files (plots, models, results) should be saved to the current directory (/workspace).
+        Use simple filenames like "plot.png", "model.pkl", "results.arrow" etc.
+        These files will be automatically available outside the container after execution.
 
         **NOTE ABOUT LAB NOTEBOOK**
 
@@ -306,7 +314,7 @@ async def create_team_b(
         termination_condition=TextMentionTermination(engineer_termination_token),
         max_turns=75
     )
-    
+
     # Initialize critic team
     review_agents = team_composition.get("review_team", ["data_science_critic"])
     critic_agent = initialize_agents(
@@ -339,7 +347,8 @@ async def create_team_b(
         max_messages_to_return=max_messages_to_return
     )
     
-    # Set the output directory
-    team_b._output_dir = working_dir
+    # Set the output directory to the container's working directory
+    # The host working_dir is mounted as /workspace in the container
+    team_b._output_dir = "/workspace"
     
     return team_b, code_executor 
