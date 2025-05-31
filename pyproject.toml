@@ -19,6 +19,11 @@ dependencies = [
     "scipy>=1.15.3",
     "scikit-learn>=1.6.1",
     "ipdb>=0.13.13",
+    "beautifulsoup4>=4.12.0",
+    "requests>=2.31.0",
+    "aiohttp>=3.9.0",
+    "autogen-core",
+    "seaborn>=0.13.2",
 ]
 
 [project.scripts]
@@ -30,3 +35,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bioagents"]
+
+[tool.uv.sources]
+autogen-agentchat = { path = "../software/autogen/python/packages/autogen-agentchat" }
+autogen-ext = { path = "../software/autogen/python/packages/autogen-ext" }
+autogen-core = { path = "../software/autogen/python/packages/autogen-core" }

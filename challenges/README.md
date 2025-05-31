@@ -49,23 +49,6 @@ available_data:
 data_completeness: |
   Statement about data sufficiency and any important notes.
 
-autonomous_workflow:
-  approach: |
-    High-level guidance on how agents should approach the task.
-  methodology: |
-    Suggested methodological considerations.
-  expected_outcomes:
-    - List of expected deliverables
-    - Visualizations, models, reports, etc.
-
-lab_notebook_guidelines: |
-  Instructions for what should be documented in the lab notebook.
-
-reference:
-  section_name:
-    text: |
-      Reference information agents might need.
-
 evaluation:
   metrics:
     - name: metric_name

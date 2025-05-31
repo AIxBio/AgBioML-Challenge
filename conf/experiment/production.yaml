@@ -4,9 +4,11 @@ defaults:
   - override /docker: extended_timeout
 
 # Production configuration
-model: gpt-4
+model: gpt-4.1
 max_iterations: 25
 dry_run: false
+
+enable_public_evaluation: false
 
 # Override Hydra output directory for production runs
 hydra:

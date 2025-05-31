@@ -13,6 +13,10 @@ task_dir: ???  # Must be provided via command line
 model: gpt-4.1
 max_iterations: 25
 
+# Evaluation configuration
+enable_public_evaluation: true  # Public evaluation is REQUIRED - agents must test on public set first
+require_public_evaluation: true  # Whether to require public evaluation before final submission (only relevant if enable_public_evaluation=true)
+
 # Run configuration
 dry_run: false
 

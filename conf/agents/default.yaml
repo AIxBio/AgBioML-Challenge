@@ -16,7 +16,13 @@ team_composition:
   review_team:
     - data_science_critic
 
-# Agent behavior settings
-planning_max_turns: 15
-implementation_max_turns: 75
-review_max_iterations: 3 
+# Agent behavior settings and conversation limits
+planning_max_turns: 15  # Team A planning conversations
+implementation_max_turns: 50  # Team B implementation conversations (reduced from 75)
+review_max_iterations: 3  # Maximum critic revision cycles
+
+# Individual agent context limits (using BufferedChatCompletionContext)
+agent_context_limits:
+  planning_agents: 15  # Principal scientist, bioinformatics expert, ml expert
+  implementation_engineer: 30  # Needs more context for implementation details
+  data_science_critic: 20  # Needs sufficient context to review work 

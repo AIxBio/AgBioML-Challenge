@@ -4,7 +4,7 @@
 # Docker executor settings
 docker:
   image: millerh1/bioagents:latest
-  timeout: 3600
+  timeout: 1800  # 30 minutes
   work_dir: ${hydra:runtime.output_dir}
   
 # GPU configuration

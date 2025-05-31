@@ -366,9 +366,31 @@ def get_base_tools():
         ),
         "analyze_plot": FunctionTool(
             analyze_plot_file,
-            description="""Analyze a plot file and return a description of its contents.
-            You can provide a custom prompt to ask specific questions about the plot.
-            If no prompt is provided, a default analysis will be performed.""",
+            description="""Analyze and critique plot files using advanced visual AI analysis.
+            
+            This tool provides detailed analysis that goes beyond what you can determine from code alone:
+            - Identifies plot types, data patterns, and visual quality issues
+            - Detects outliers, trends, and distribution characteristics visible in the plot
+            - Provides expert critique of plot design, clarity, and scientific communication
+            - Can answer specific questions about visual elements you can't assess programmatically
+            
+            **WHEN TO USE:**
+            - After creating any visualization to verify it displays data correctly
+            - To get expert feedback on plot quality and design before finalizing
+            - To identify visual patterns or outliers that might not be obvious from code
+            - To ensure plots meet scientific communication standards
+            - When you need to describe plots in reports or documentation
+            
+            **USAGE EXAMPLES:**
+            - analyze_plot("correlation_heatmap.png") - Get detailed analysis of patterns
+            - analyze_plot("age_distribution.png", "Are there any obvious outliers in this distribution?")
+            - analyze_plot("model_performance.png", "How clear is this plot for showing model comparison?")
+            
+            **PARAMETERS:**
+            - filepath: Path to the plot file (PNG, JPG, etc.)
+            - prompt: Optional specific question about the plot (if not provided, gives comprehensive analysis)
+            
+            The tool returns structured analysis including plot explanation, quality critique, and answers to questions.""",
             name="analyze_plot"
         ),
     } 

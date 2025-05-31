@@ -1,0 +1,23 @@
+# @package _global_
+defaults:
+  - override /agents: default
+  - override /docker: default
+
+# Multirun experiment: Compare model performance with/without public evaluation
+max_iterations: 25
+
+# Hydra multirun configuration
+hydra:
+  sweep:
+    dir: ./outputs/multirun_comparison_challenge1/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${model}_public-eval-${enable_public_evaluation}_run-${hydra.job.num}
+
+# Usage examples:
+# 1. gpt-4.1 with public eval enabled (5 runs):
+#    bioagents +experiment=multirun_comparison --multirun model=gpt-4.1 enable_public_evaluation=true hydra.job.num=0,1,2,3,4
+#
+# 2. gpt-4.1 with public eval disabled (5 runs):  
+#    bioagents +experiment=multirun_comparison --multirun model=gpt-4.1 enable_public_evaluation=false hydra.job.num=0,1,2,3,4
+#
+# 3. gpt-4o with public eval enabled (5 runs):
+#    bioagents +experiment=multirun_comparison --multirun model=gpt-4o enable_public_evaluation=true hydra.job.num=0,1,2,3,4 

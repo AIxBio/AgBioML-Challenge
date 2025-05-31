@@ -26,6 +26,7 @@ class EvaluationMetric(BaseModel):
 
 class EvaluationConfig(BaseModel):
     """Schema for evaluation configuration."""
+    process: Optional[str] = None
     metrics: List[EvaluationMetric]
     required_outputs: List[str]
 
@@ -56,12 +57,9 @@ class TaskConfig(BaseModel):
     version: str
     task_description: str
     project_goal: str
-    project_context: str
     available_data: AvailableData
     data_completeness: str
-    autonomous_workflow: AutonomousWorkflow
-    lab_notebook_guidelines: str
-    reference: Dict[str, ReferenceSection]
+    prediction_requirements: Optional[str] = None
     evaluation: EvaluationConfig
     docker: DockerConfig
     
@@ -104,5 +102,5 @@ class HydraConfig(BaseModel):
     gpus: str = Field("all", description="GPU specification: 'all', 'none', or comma-separated indices")
     working_dir: str = Field("./workdir", description="Base directory for run outputs")
     dry_run: bool = Field(False, description="Validate configuration without running")
-    model: str = Field("gpt-4.1", description="LLM model to use")
+    model: str = Field("gpt-4.1-mini", description="LLM model to use")
     agents_config: Optional[str] = Field(None, description="Path to custom agents configuration") 

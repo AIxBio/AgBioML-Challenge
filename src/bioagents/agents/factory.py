@@ -10,17 +10,78 @@ from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import TextMentionTermination
 from autogen_ext.code_executors.docker import DockerCommandLineCodeExecutor
 from autogen_agentchat.agents import CodeExecutorAgent
+from autogen_core.model_context import BufferedChatCompletionContext
 from docker.types import DeviceRequest
 
 from .base import TeamAPlanning, EngineerSociety
+
+
+def remove_public_evaluation_references(prompt: str) -> str:
+    """
+    Remove references to public evaluation from agent prompts when it's disabled.
+    
+    Args:
+        prompt: Original agent prompt
+        
+    Returns:
+        Modified prompt without public evaluation references
+    """
+    # Remove the entire public evaluation workflow section
+    lines = prompt.split('\n')
+    filtered_lines = []
+    skip_section = False
+    
+    for line in lines:
+        # Start skipping when we find the evaluation workflow section
+        if "**EVALUATION WORKFLOW - REQUIRED STEPS**" in line:
+            skip_section = True
+            # Add alternative instructions
+            filtered_lines.append("      **EVALUATION WORKFLOW**")
+            filtered_lines.append("      Generate your final predictions directly for the private test set:")
+            filtered_lines.append("      ")
+            filtered_lines.append("      1. **TRAIN YOUR MODEL:**")
+            filtered_lines.append("         - Use betas.arrow and metadata.arrow to build and train your model")
+            filtered_lines.append("         - Apply appropriate preprocessing and feature selection")
+            filtered_lines.append("         ")
+            filtered_lines.append("      2. **GENERATE FINAL PREDICTIONS:**")
+            filtered_lines.append("         - Load betas_heldout_private.arrow")
+            filtered_lines.append("         - Apply the same preprocessing as training")
+            filtered_lines.append("         - Generate predictions and save as 'predictions.arrow'")
+            filtered_lines.append("         ")
+            filtered_lines.append("      Note: Public evaluation is not available. Focus on building the best model possible.")
+            filtered_lines.append("      ")
+            continue
+            
+        # Stop skipping after the example workflow
+        if skip_section and line.strip() == "```" and "final_pred_df.to_feather('predictions.arrow')" in '\n'.join(filtered_lines[-20:]):
+            skip_section = False
+            filtered_lines.append(line)
+            continue
+            
+        # Skip lines in the evaluation workflow section
+        if skip_section:
+            continue
+            
+        # Remove other references to public evaluation
+        if "evaluate_on_public_test" in line:
+            continue
+        if "PUBLIC EVALUATION (REQUIRED FIRST)" in line:
+            continue
+        if "predictions_public.arrow" in line and "Stage 1:" not in line:
+            continue
+            
+        filtered_lines.append(line)
+    
+    return '\n'.join(filtered_lines)
 
 
 def initialize_agents(
     agent_configs: Dict[str, Any],
     tools: Dict[str, Any],
     selected_agents: Optional[List[str]] = None,
-    model_name: str = "gpt-4.1",
-    task_context: Optional[str] = None
+    model_name: str = "gpt-4.1-mini",
+    task_context: Optional[str] = None,
+    enable_public_evaluation: bool = True
 ) -> Dict[str, AssistantAgent]:
     """
     Initialize agents based on configurations.
@@ -31,11 +92,12 @@ def initialize_agents(
         selected_agents: List of agent names to initialize (None = all)
         model_name: Name of the model to use
         task_context: Optional task-specific context to inject
+        enable_public_evaluation: Whether public evaluation is enabled
         
     Returns:
         Dictionary of initialized agents
     """
-    model_client = OpenAIChatCompletionClient(model=model_name)
+    model_client = OpenAIChatCompletionClient(model=model_name, stream_options={"include_usage": True})
     
     # Get current date once for this initialization
     today_date = datetime.date.today().isoformat()
@@ -78,6 +140,10 @@ def initialize_agents(
         # Use the prompt field as the system prompt
         system_prompt = config.get("prompt", "")
         
+        # Remove public evaluation references if disabled
+        if not enable_public_evaluation and name == "implementation_engineer":
+            system_prompt = remove_public_evaluation_references(system_prompt)
+        
         # Add date context at the beginning
         system_prompt = f"CONTEXT: Today's date is {today_date}.\n\n" + system_prompt
         
@@ -109,17 +175,16 @@ def initialize_agents(
 
         **NOTE ABOUT FILE LOCATIONS**
         
-        You are executing code inside a Docker container where the working directory is /workspace.
-        All data files mentioned in the task description are available in this directory.
-        For example, if the task mentions "data/agent/betas.arrow", the file is at "/workspace/betas.arrow".
-        You can use either absolute paths (/workspace/filename) or relative paths (./filename or just filename).
-        Your current working directory is /workspace.
+        You are executing code in your current working directory. All data files mentioned in the 
+        task description are available in this directory. For example, if the task mentions 
+        "betas.arrow", the file is available as "betas.arrow" in your current directory.
+        Always use relative paths (./filename or just filename) or the current directory.
 
         **NOTE ABOUT OUTPUT FILES**
         
-        All output files (plots, models, results) should be saved to the current directory (/workspace).
+        All output files (plots, models, results) should be saved to the current directory.
         Use simple filenames like "plot.png", "model.pkl", "results.arrow" etc.
-        These files will be automatically available outside the container after execution.
+        These files will be automatically available after execution.
 
         **NOTE ABOUT LAB NOTEBOOK**
 
@@ -154,10 +219,19 @@ def initialize_agents(
         - data_testsplit.csv
         """
         
+        # Set appropriate buffer size based on agent role
+        if name == "implementation_engineer":
+            buffer_size = 30  # Engineers need more context for implementation details
+        elif name == "data_science_critic":
+            buffer_size = 20  # Critics need sufficient context to review
+        else:
+            buffer_size = 15  # Planning agents need moderate context
+        
         agents[name] = AssistantAgent(
             name=config.get("name", name),
             system_message=system_prompt,
             model_client=model_client,
+            model_context=BufferedChatCompletionContext(buffer_size=buffer_size),
             tools=agent_tools,
             model_client_stream=True,
             reflect_on_tool_use=True
@@ -186,10 +260,11 @@ def get_agent_token(agent_configs: Dict[str, Any], agent_name: str, token_type: 
 async def create_team_a(
     agent_configs: Dict[str, Any],
     tools: Dict[str, Any],
-    model_name: str = "gpt-4.1",
+    model_name: str = "gpt-4.1-mini",
     task_context: Optional[str] = None,
     max_turns: int = 15,
-    team_composition: Optional[List[str]] = None
+    team_composition: Optional[List[str]] = None,
+    enable_public_evaluation: bool = True
 ) -> TeamAPlanning:
     """
     Create Team A (Planning) with the required agents.
@@ -201,6 +276,7 @@ async def create_team_a(
         task_context: Task-specific context
         max_turns: Maximum turns for internal group chat
         team_composition: List of agent names for the team
+        enable_public_evaluation: Whether public evaluation is enabled
         
     Returns:
         Initialized TeamAPlanning instance
@@ -212,7 +288,8 @@ async def create_team_a(
         selected_agents=team_a_agents,
         tools=tools,
         model_name=model_name,
-        task_context=task_context
+        task_context=task_context,
+        enable_public_evaluation=enable_public_evaluation
     )
     
     # Get the principal scientist's termination token
@@ -234,13 +311,14 @@ async def create_team_a(
 async def create_team_b(
     agent_configs: Dict[str, Any],
     tools: Dict[str, Any],
-    model_name: str = "gpt-4.1",
+    model_name: str = "gpt-4.1-mini",
     task_context: Optional[str] = None,
     docker_config: Optional[Dict[str, Any]] = None,
     gpu_spec: str = "all",
     working_dir: str = ".",
     max_messages_to_return: int = 25,
-    team_composition: Optional[Dict[str, List[str]]] = None
+    team_composition: Optional[Dict[str, List[str]]] = None,
+    enable_public_evaluation: bool = True
 ) -> tuple[EngineerSociety, DockerCommandLineCodeExecutor]:
     """
     Create Team B (Engineering) with the required agents and code executor.
@@ -255,6 +333,7 @@ async def create_team_b(
         working_dir: Working directory for code execution
         max_messages_to_return: Maximum messages to return from team
         team_composition: Dictionary with implementation_team and review_team lists
+        enable_public_evaluation: Whether public evaluation is enabled
         
     Returns:
         Tuple of (EngineerSociety instance, DockerCommandLineCodeExecutor instance)
@@ -281,7 +360,8 @@ async def create_team_b(
         selected_agents=implementation_agents,
         tools=tools,
         model_name=model_name,
-        task_context=task_context
+        task_context=task_context,
+        enable_public_evaluation=enable_public_evaluation
     )[implementation_agents[0]]  # Use first agent as primary engineer
     
     engineer_termination_token = get_agent_token(agent_configs, "implementation_engineer")
@@ -298,7 +378,8 @@ async def create_team_b(
             capabilities=[["gpu"]]
         )]
     
-    code_executor = DockerCommandLineCodeExecutor(
+    code_executor = LimitedOutputDockerExecutor(
+        max_output_chars=3000,  # Limit output to 3000 characters
         image=docker_config.get("image", "millerh1/bioagents:latest"),
         work_dir=docker_config.get("work_dir", working_dir),
         timeout=docker_config.get("timeout", 3600),
@@ -312,7 +393,7 @@ async def create_team_b(
     engineer_team = RoundRobinGroupChat(
         participants=[engineer_agent, code_executor_agent],
         termination_condition=TextMentionTermination(engineer_termination_token),
-        max_turns=75
+        max_turns=50  # Reduced from 75 to prevent excessively long conversations
     )
 
     # Initialize critic team
@@ -322,7 +403,8 @@ async def create_team_b(
         selected_agents=review_agents,
         tools=tools,
         model_name=model_name,
-        task_context=task_context
+        task_context=task_context,
+        enable_public_evaluation=enable_public_evaluation
     )[review_agents[0]]  # Use first agent as primary critic
     
     critic_termination_token = get_agent_token(agent_configs, "data_science_critic")
@@ -347,8 +429,34 @@ async def create_team_b(
         max_messages_to_return=max_messages_to_return
     )
     
-    # Set the output directory to the container's working directory
-    # The host working_dir is mounted as /workspace in the container
-    team_b._output_dir = "/workspace"
+    # Set the output directory to the current working directory
+    team_b._output_dir = "."
     
-    return team_b, code_executor 
+    return team_b, code_executor
+
+
+class LimitedOutputDockerExecutor(DockerCommandLineCodeExecutor):
+    """Docker code executor that limits output to prevent token explosion."""
+    
+    def __init__(self, max_output_chars: int = 3000, **kwargs):
+        super().__init__(**kwargs)
+        self.max_output_chars = max_output_chars
+    
+    async def _execute_code_dont_check_setup(self, code_blocks, cancellation_token):
+        """Execute code blocks with output limiting."""
+        result = await super()._execute_code_dont_check_setup(code_blocks, cancellation_token)
+        
+        # Limit the output length
+        if len(result.output) > self.max_output_chars:
+            truncated_output = result.output[-self.max_output_chars:]
+            final_output = f"[OUTPUT TRUNCATED - showing last {self.max_output_chars} characters]\n\n{truncated_output}"
+            
+            # Create a new result with truncated output
+            from autogen_ext.code_executors._common import CommandLineCodeResult
+            return CommandLineCodeResult(
+                exit_code=result.exit_code,
+                output=final_output,
+                code_file=result.code_file
+            )
+        
+        return result 

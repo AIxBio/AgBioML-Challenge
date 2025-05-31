@@ -18,6 +18,98 @@ def estimate_tokens(messages):
     return total_tokens
 
 
+def truncate_message_for_budget(content: str, max_tokens: int = 30000) -> str:
+    """
+    Truncate message content to fit within token budget.
+    
+    Args:
+        content: Message content to truncate
+        max_tokens: Maximum tokens allowed
+    
+    Returns:
+        Truncated content with summary
+    """
+    estimated_tokens = len(content.split()) * 3
+    if estimated_tokens <= max_tokens:
+        return content
+    
+    # Calculate max characters (rough approximation)
+    max_chars = int(max_tokens / 3 * 4)  # ~4 chars per word
+    
+    if len(content) <= max_chars:
+        return content
+    
+    # Truncate and add summary
+    truncated = content[-max_chars:]
+    return f"""[CONTENT TRUNCATED - showing last ~{max_tokens} tokens due to size limits]
+
+{truncated}
+
+[END TRUNCATED CONTENT]"""
+
+
+def create_team_b_summary(messages: List[Any], max_summary_tokens: int = 10000) -> str:
+    """
+    Create a concise summary of Team B's work instead of full message history.
+    
+    Args:
+        messages: List of messages from Team B
+        max_summary_tokens: Maximum tokens for the summary
+    
+    Returns:
+        Concise summary of Team B's implementation work
+    """
+    if not messages:
+        return "No Team B implementation work completed yet."
+    
+    # Extract key information instead of full content
+    summary_parts = []
+    
+    # Look for key patterns in messages
+    for msg in messages[-10:]:  # Only look at last 10 messages
+        content = msg.content if hasattr(msg, 'content') else str(msg)
+        
+        # Extract key outcomes and files created
+        if "Files created:" in content or "Generated:" in content:
+            lines = content.split('\n')
+            for line in lines:
+                if any(keyword in line.lower() for keyword in ['file', 'created', 'generated', 'saved']):
+                    summary_parts.append(line.strip())
+        
+        # Extract error messages or important feedback
+        if any(keyword in content.lower() for keyword in ['error', 'failed', 'issue', 'problem']):
+            # Get a snippet around the error
+            lines = content.split('\n')
+            for i, line in enumerate(lines):
+                if any(keyword in line.lower() for keyword in ['error', 'failed']):
+                    context_start = max(0, i-1)
+                    context_end = min(len(lines), i+2)
+                    context = '\n'.join(lines[context_start:context_end])
+                    summary_parts.append(f"Issue found: {context}")
+                    break
+        
+        # Extract successful completions
+        if "ENGINEER_DONE" in content or "implementation complete" in content.lower():
+            summary_parts.append("✓ Implementation phase completed successfully")
+        
+        if "APPROVE_ENGINEER" in content:
+            summary_parts.append("✓ Critic approved the implementation")
+        
+        if "REVISE_ENGINEER" in content:
+            summary_parts.append("⚠ Critic requested revisions")
+    
+    # Create the summary
+    if summary_parts:
+        summary = "TEAM B IMPLEMENTATION SUMMARY:\n\n" + "\n".join(summary_parts[-15:])  # Last 15 key points
+    else:
+        # Fallback: use last message content but truncated
+        last_msg = messages[-1]
+        last_content = last_msg.content if hasattr(last_msg, 'content') else str(last_msg)
+        summary = f"TEAM B LAST UPDATE:\n\n{truncate_message_for_budget(last_content, max_summary_tokens)}"
+    
+    return truncate_message_for_budget(summary, max_summary_tokens)
+
+
 class TeamAPlanning(BaseChatAgent):
     """
     A custom agent that manages collaboration between the principal scientist,
@@ -77,11 +169,27 @@ class TeamAPlanning(BaseChatAgent):
         print(f"TeamAPlanning - Received {len(messages)} messages")
         print(f"TOKEN ESTIMATE: {estimate_tokens(messages)}")
         
+        # CRITICAL FIX: Reset the group chat before each conversation to ensure 
+        # the round-robin always starts with the first participant (Principal Scientist)
+        print(f"DEBUG: Resetting TeamA group chat to ensure Principal Scientist speaks first")
+        await self._group_chat.reset()
+        
+        # Debug logging to verify the participant order
+        print(f"DEBUG: TeamA participant order after reset:")
+        for i, participant in enumerate(self._group_chat._participants):
+            print(f"  {i+1}. {participant.name} (should speak {'first' if i==0 else 'second' if i==1 else 'third'})")
+
         # Run the internal group chat
         result = await Console(
             self._group_chat.run_stream(task=messages, cancellation_token=cancellation_token), 
             output_stats=True
         )
+        
+        # Debug: Log who spoke in what order
+        print(f"DEBUG: Team A conversation completed. Message sources in order:")
+        for i, msg in enumerate(result.messages):
+            if hasattr(msg, 'source'):
+                print(f"  Message {i+1}: {msg.source}")
         
         # Extract the final message (summary/plan from the Principal Scientist)
         # Remove the termination token
@@ -169,15 +277,14 @@ class EngineerSociety(BaseChatAgent):
         engineer_directory_instruction = TextMessage(
             content=f"""IMPORTANT FILE PATH INSTRUCTIONS:
 
-ALL output files (plots, data, etc.) MUST be saved in this exact directory:
-{self._output_dir}
+ALL output files (plots, data, etc.) MUST be saved in the current working directory.
 
 Examples of correct file paths:
-- plt.savefig('{self._output_dir}/histogram.png')
-- df.to_csv('{self._output_dir}/results.csv')
-- np.save('{self._output_dir}/array_data.npy')
+- plt.savefig('histogram.png')
+- df.to_feather('results.arrow')
+- np.save('array_data.npy')
 
-Do NOT save files to the current directory or any other location. Always use '{self._output_dir}/' as the path prefix.
+Use simple filenames without any directory prefixes. All files will be saved in the current working directory.
 """,
             source="User"
         )
@@ -295,9 +402,9 @@ The notebook is a critical scientific record that Team A will use to plan the ne
                 content=f"""TOOLS AVAILABLE FOR YOUR REVIEW:
 
 The following tools can help you evaluate the implementation:
-- search_directory("{self._output_dir}", "*.png") to find visualization files
-- analyze_plot("{self._output_dir}/filename.png") to examine any visualizations of interest
-- search_directory("{self._output_dir}", "*") to see all output files
+- search_directory(".", "*.png") to find visualization files
+- analyze_plot("filename.png") to examine any visualizations of interest
+- search_directory(".", "*") to see all output files
 - read_notebook() to see the project history and context
 
 You can use these tools as needed to support your assessment. Tools are particularly helpful for examining visualizations that seem relevant to your evaluation. In your first review, examining some visualizations is recommended but not mandatory.
@@ -375,12 +482,11 @@ write_notebook(
             
             # Add directory and notebook reminders before running engineer again
             directory_reminder = TextMessage(
-                content=f"""IMPORTANT REMINDER: ALL output files (plots, data, etc.) MUST be saved in:
-{self._output_dir}
+                content=f"""IMPORTANT REMINDER: ALL output files (plots, data, etc.) MUST be saved in the current working directory.
 
 Examples of correct paths:
-- plt.savefig('{self._output_dir}/histogram.png')
-- df.to_csv('{self._output_dir}/results.csv')""",
+- plt.savefig('histogram.png')
+- df.to_feather('results.arrow')""",
                 source="User"
             )
             
@@ -449,16 +555,14 @@ DO NOT proceed with code implementation until you have explicitly acknowledged e
                     last_messages_engineer = engineer_messages
                 self.all_messages.extend(last_messages_engineer)
 
-        # Instead of using a summarizer, return the last N messages
-        # Get the last N messages from the full interaction
-        if len(self.all_messages) > self._max_messages_to_return:
-            last_n_messages = self.all_messages[-self._max_messages_to_return:]
-        else:
-            last_n_messages = self.all_messages
+        # Use a summary instead of full message history to prevent token explosion
+        # Create a concise summary of Team B's work
+        team_b_summary = create_team_b_summary(self.all_messages, max_summary_tokens=12000)
         
-        # Combine the messages into a single message for the response
-        combined_content = self._format_message_history(last_n_messages)
-        final_message = TextMessage(content=combined_content, source=self.name)
+        # Apply additional token budget check
+        team_b_summary = truncate_message_for_budget(team_b_summary, max_tokens=10000)
+        
+        final_message = TextMessage(content=team_b_summary, source=self.name)
         
         return Response(chat_message=final_message, inner_messages=self.all_messages)
     

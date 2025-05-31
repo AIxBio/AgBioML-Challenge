@@ -63,6 +63,27 @@ bioagents task_dir=challenges/01_basic_epigenetic_clock \
 3. **Review Phase**: Critical evaluation and iterative improvement
 4. **Completion**: Verified solution with model checkpoint and evaluation
 
+## 🎯 Public Evaluation System
+
+BioAgents includes a **mandatory** public/private evaluation system that mirrors real ML competition workflows:
+
+**How It Works:**
+1. **Data Split**: Test data is split 50/50 into public and private subsets
+2. **Public Testing**: Agents MUST evaluate on the public subset (up to 5 times)
+3. **Final Scoring**: Final evaluation uses the private subset
+
+**For Agents:**
+- First evaluate models on `betas_heldout_public.arrow` → `predictions_public.arrow`
+- Use the `evaluate_on_public_test` tool to get performance metrics (REQUIRED)
+- Iterate and improve based on public results (5 attempts max)
+- Generate final predictions on `betas_heldout_private.arrow` → `predictions.arrow`
+
+**Default Behavior:**
+- Public evaluation is **enabled by default** and required
+- To disable (not recommended): `enable_public_evaluation=false`
+
+This system prevents overfitting to the test set while ensuring agents validate their approach before final submission.
+
 ## 🎛️ Configuration System
 
 BioAgents uses [Hydra](https://hydra.cc/) for flexible, composable configuration management.
@@ -217,10 +238,7 @@ python scripts/validate_challenges.py
 
 ```bash
 # Parameter sweeps
-bioagents --multirun task_dir=challenges/01_basic_epigenetic_clock model=gpt-4,gpt-4o
-
-# Agent configuration comparison
-bioagents --multirun task_dir=challenges/01_basic_epigenetic_clock agents=default,minimal
+bioagents --multirun task_dir=challenges/01_basic_epigenetic_clock +experiment=multirun_comparison model=gpt-4.1,gpt-4.1-mini,gpt-4o,gpt-4o-mini enable_public_evaluation=true,false +seed=0,1,2,3,4,5
 ```
 
 ### Custom Docker Images

@@ -68,11 +68,15 @@ def bioagents(cfg: DictConfig) -> None:
     # Load agents config with resource substitution
     agent_configs = load_agents_config(agents_config_file, resource_config)
     
-    # Initialize tools
+    # Check if public evaluation is enabled
+    enable_public_evaluation = config.get('enable_public_evaluation', False)
+    require_public_evaluation = config.get('require_public_evaluation', True)
+    
+    # Initialize tools with evaluation tools if enabled
     tools = get_all_tools()
     
     # Get other configuration values
-    model_name = config.get('model', 'gpt-4.1')
+    model_name = config.get('model', 'gpt-4.1-mini')
     max_iterations = config.get('max_iterations', 25)
     dry_run = config.get('dry_run', False)
     
@@ -92,6 +96,10 @@ def bioagents(cfg: DictConfig) -> None:
     logger.info(f"Docker image: {docker_config.get('image', 'millerh1/bioagents:latest')}")
     logger.info(f"GPU specification: {gpu_spec}")
     logger.info(f"Resource profile: {resource_config.get('compute', {}).get('gpu', {}).get('type', 'default')}")
+    logger.info(f"Public evaluation enabled: {enable_public_evaluation}")
+    
+    if enable_public_evaluation:
+        logger.info(f"Public evaluation requirement: {'REQUIRED' if require_public_evaluation else 'OPTIONAL'}")
     
     if dry_run:
         logger.info("Dry run mode - configuration validated successfully")
@@ -104,6 +112,12 @@ def bioagents(cfg: DictConfig) -> None:
         print(f"Resource profile: CPU={resource_config.get('compute', {}).get('cpu', {}).get('cores', 'N/A')} cores, "
               f"RAM={resource_config.get('compute', {}).get('cpu', {}).get('memory_gb', 'N/A')}GB, "
               f"GPU={resource_config.get('compute', {}).get('gpu', {}).get('type', 'none')}")
+        
+        if enable_public_evaluation:
+            public_eval_text = f"Enabled (5 attempts, {'REQUIRED' if require_public_evaluation else 'OPTIONAL'})"
+        else:
+            public_eval_text = "Disabled"
+        print(f"Public evaluation: {public_eval_text}")
         print("\n=== Task Requirements ===")
         for metric in task_config.evaluation.metrics:
             print(f"- {metric.name}: {metric.threshold} on {metric.dataset}")
@@ -121,7 +135,9 @@ def bioagents(cfg: DictConfig) -> None:
         docker_config=docker_config,
         gpu_spec=gpu_spec,
         team_config=team_config,
-        resource_config=resource_config
+        resource_config=resource_config,
+        enable_public_evaluation=enable_public_evaluation,
+        require_public_evaluation=require_public_evaluation
     ))
 
 

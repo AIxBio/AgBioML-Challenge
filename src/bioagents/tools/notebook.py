@@ -104,6 +104,75 @@ def write_notebook(
     return formatted_entry
 
 
+def read_notebook_recent(notebook_path: Optional[Path] = None, max_entries: int = 10) -> str:
+    """
+    Read only the most recent entries from the lab notebook.
+    
+    Args:
+        notebook_path: Path to the notebook file. If None, uses default path.
+        max_entries: Maximum number of recent entries to return
+    
+    Returns:
+        Content of the most recent entries only
+    """
+    if notebook_path is None:
+        notebook_path = Path("lab_notebook.md")
+    
+    try:
+        with open(notebook_path, 'r') as f:
+            content = f.read()
+        
+        # Split by entry headers (### [timestamp])
+        parts = content.split("### [")
+        
+        if len(parts) <= max_entries + 1:  # +1 because first part is header
+            return content
+        
+        # Keep the header (first part) and last N entries
+        header = parts[0]
+        recent_entries = parts[-(max_entries):]
+        
+        # Reconstruct with entry markers
+        result = header + "### [" + "### [".join(recent_entries)
+        
+        return result
+        
+    except FileNotFoundError:
+        # Initialize the notebook if it doesn't exist
+        initialize_notebook(notebook_path)
+        return read_notebook_recent(notebook_path, max_entries)
+
+
+def read_notebook_summary(notebook_path: Optional[Path] = None, max_chars: int = 20000) -> str:
+    """
+    Read notebook content with smart truncation.
+    
+    Args:
+        notebook_path: Path to the notebook file
+        max_chars: Maximum characters to return
+    
+    Returns:
+        Truncated notebook content with summary if needed
+    """
+    full_content = read_notebook(notebook_path)
+    
+    if len(full_content) <= max_chars:
+        return full_content
+    
+    # Try recent entries first
+    recent_content = read_notebook_recent(notebook_path, max_entries=8)
+    if len(recent_content) <= max_chars:
+        return recent_content
+    
+    # If still too long, truncate and add summary
+    truncated = recent_content[-max_chars:]
+    return f"""[NOTEBOOK CONTENT TRUNCATED - showing last {max_chars} characters]
+
+{truncated}
+
+[END TRUNCATED CONTENT]"""
+
+
 # Create tool wrappers
 notebook_read_tool = FunctionTool(
     read_notebook,
