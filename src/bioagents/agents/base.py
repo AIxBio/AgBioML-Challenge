@@ -197,8 +197,8 @@ class TeamAPlanning(BaseChatAgent):
         if isinstance(final_message, TextMessage) and self._termination_token in final_message.content:
             final_message.content = final_message.content.replace(self._termination_token, "").strip()
         
-        # Return only the final message as the response
-        return Response(chat_message=final_message)
+        # Return both the final message and all inner messages for metrics tracking
+        return Response(chat_message=final_message, inner_messages=result.messages)
     
     async def on_reset(self, cancellation_token: CancellationToken) -> None:
         """Reset the agent, clearing any internal state."""

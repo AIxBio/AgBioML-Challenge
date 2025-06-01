@@ -236,10 +236,29 @@ python scripts/validate_challenges.py
 
 ### Multi-run Experiments
 
+BioAgents supports parallel execution of multirun experiments using Hydra's joblib launcher:
+
 ```bash
-# Parameter sweeps
-bioagents --multirun task_dir=challenges/01_basic_epigenetic_clock +experiment=multirun_comparison model=gpt-4.1,gpt-4.1-mini,gpt-4o,gpt-4o-mini enable_public_evaluation=true,false +seed=0,1,2,3,4,5
+# Parallel parameter sweeps (runs 4 jobs in parallel by default)
+bioagents --multirun +experiment=multirun_comparison task_dir=challenges/01_basic_epigenetic_clock model=gpt-4.1,gpt-4o enable_public_evaluation=true,false +seed=0,1,2,3 hydra.launcher.n_jobs=4
+
+# Adjust number of parallel jobs
+bioagents --multirun +experiment=multirun_comparison task_dir=challenges/01_basic_epigenetic_clock model=gpt-4.1,gpt-4o enable_public_evaluation=true,false hydra.launcher.n_jobs=8
+
+# Single model, multiple runs (parallel)
+bioagents --multirun +experiment=multirun_comparison task_dir=challenges/01_basic_epigenetic_clock model=gpt-4.1 enable_public_evaluation=true +seed=0,1,2,3,4
 ```
+
+**Parallel Execution Features:**
+- **Default**: 4 parallel jobs (configurable)
+- **Automatic batching**: Jobs are batched for optimal resource usage
+- **Progress tracking**: Real-time progress across all parallel jobs
+- **Output organization**: Each job gets its own timestamped directory
+
+**Performance Tips:**
+- Set `n_jobs` to your CPU core count for optimal performance
+- Monitor system resources during parallel execution
+- Consider using fewer parallel jobs for GPU-intensive tasks
 
 ### Custom Docker Images
 
