@@ -266,9 +266,6 @@ class EngineerSociety(BaseChatAgent):
         """
         NUM_LAST_MESSAGES = min(self._max_messages_to_return, 50)  # Cap at 50 for safety
         original_messages = messages
-        print(f"TOKEN ESTIMATE: engineer society: {estimate_tokens(messages)}")
-        print(f"NUM MESSAGES: {len(messages)}")
-        time.sleep(2)
         
         # Reset message tracking for this run
         self.all_messages = []
@@ -372,10 +369,7 @@ The notebook is a critical scientific record that Team A will use to plan the ne
         engineer_messages = result_engineer.messages
         engineer_messages = [message for message in engineer_messages if isinstance(message, TextMessage)]
         engineer_messages = [message for message in engineer_messages if not "error" in message.content.lower()]
-        print(f"TOKEN ESTIMATE: engineer team: {estimate_tokens(engineer_messages)}")
-        print(f"NUM MESSAGES: {len(engineer_messages)}")
-        time.sleep(2)
-        
+
         # In the last message, remove the engineer_terminate_token
         if len(engineer_messages) > 0:
             engineer_messages[-1].content = engineer_messages[-1].content.replace(self._engineer_terminate_token, "")
@@ -438,16 +432,10 @@ write_notebook(
             )
             messages_for_critic.append(tool_instruction_message)
             
-            print(f"TOKEN ESTIMATE: critic team before run {revision_counter}: {estimate_tokens(messages_for_critic)}")
-            print(f"NUM MESSAGES: {len(messages_for_critic)}")
-            time.sleep(2)
             result_critic = await Console(self._critic_team.run_stream(task=messages_for_critic, cancellation_token=cancellation_token), output_stats=True)
             critic_messages = result_critic.messages
             
             critic_messages = [message for message in critic_messages if isinstance(message, TextMessage)]
-            print(f"TOKEN ESTIMATE: critic team after run {revision_counter}: {estimate_tokens(critic_messages)}")
-            print(f"NUM MESSAGES: {len(critic_messages)}")
-            time.sleep(2)
 
             # Store the last message
             last_message_critic = critic_messages[-1]
@@ -474,11 +462,6 @@ write_notebook(
             revision_counter += 1
             if revision_counter > 3:
                 break
-
-            # Run the engineer team with the updated messages
-            print(f"TOKEN ESTIMATE: engineer team before run {revision_counter}: {estimate_tokens(last_messages_engineer + [last_message_critic])}")
-            print(f"NUM MESSAGES: {len(last_messages_engineer + [last_message_critic])}")
-            time.sleep(2)
             
             # Add directory and notebook reminders before running engineer again
             directory_reminder = TextMessage(
@@ -541,9 +524,6 @@ DO NOT proceed with code implementation until you have explicitly acknowledged e
             
             engineer_messages = [message for message in engineer_messages if isinstance(message, TextMessage)]
             engineer_messages = [message for message in engineer_messages if not "error" in message.content.lower()]
-            print(f"TOKEN ESTIMATE: engineer team after run {revision_counter}: {estimate_tokens(engineer_messages)}")
-            print(f"NUM MESSAGES: {len(engineer_messages)}")
-            time.sleep(2)
             
             # Process the engineer messages
             if len(engineer_messages) > 0:

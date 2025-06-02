@@ -8,7 +8,6 @@ from pathlib import Path
 import hydra
 import hydra.core.hydra_config
 from omegaconf import DictConfig, OmegaConf
-from hydra import compose, initialize_config_dir
 
 from .config.loader import load_and_validate_task, load_agents_config
 from .tools import get_all_tools
@@ -34,8 +33,7 @@ def bioagents(cfg: DictConfig) -> None:
     original_cwd = Path(hydra_cfg.runtime.cwd)
     
     # Get task directory relative to original working directory
-    task_dir_str = config['task_dir']
-    task_dir = (original_cwd / task_dir_str).resolve()
+    task_dir = (original_cwd / config['task_dir']).resolve()
     if not task_dir.exists():
         raise ValueError(f"Task directory not found: {task_dir}")
     
@@ -52,9 +50,8 @@ def bioagents(cfg: DictConfig) -> None:
     logger.info(f"Running in directory: {run_dir}")
     
     # Load agents configuration
-    agents_config_path = config.get('agents_config')
-    if agents_config_path:
-        agents_config_file = Path(agents_config_path)
+    if config.get('agents_config'):
+        agents_config_file = Path(config['agents_config'])
     else:
         # Default to the package's agents.yaml
         agents_config_file = Path(__file__).parent / "config" / "agents.yaml"
@@ -62,59 +59,42 @@ def bioagents(cfg: DictConfig) -> None:
     if not agents_config_file.exists():
         raise ValueError(f"Agents configuration not found: {agents_config_file}")
     
-    # Load resource configuration if available
-    resource_config = config.get('resources', {})
-    
     # Load agents config with resource substitution
-    agent_configs = load_agents_config(agents_config_file, resource_config)
+    agent_configs = load_agents_config(agents_config_file, config['resources'])
     
-    # Check if public evaluation is enabled
-    enable_public_evaluation = config.get('enable_public_evaluation', False)
-    require_public_evaluation = config.get('require_public_evaluation', True)
-    
-    # Initialize tools with evaluation tools if enabled
+    # Initialize tools
     tools = get_all_tools()
     
-    # Get other configuration values
-    model_name = config.get('model', 'gpt-4.1-mini')
-    max_iterations = config.get('max_iterations', 25)
-    dry_run = config.get('dry_run', False)
-    
     # Docker configuration with resource-aware timeout
-    docker_config = config.get('docker', {})
-    if resource_config and 'timeout' in resource_config:
-        docker_config['timeout'] = resource_config['timeout'].get('docker_execution', 3600)
-    
-    gpu_spec = config.get('gpus', 'all')
-    
-    # Team configuration
-    team_config = config.get('teams', None)
+    if 'timeout' in config['resources']:
+        config['docker']['timeout'] = config['resources']['timeout']['docker_execution']
     
     logger.info(f"Task: {task_config.display_name}")
-    logger.info(f"Model: {model_name}")
-    logger.info(f"Max iterations: {max_iterations}")
-    logger.info(f"Docker image: {docker_config.get('image', 'millerh1/bioagents:latest')}")
-    logger.info(f"GPU specification: {gpu_spec}")
-    logger.info(f"Resource profile: {resource_config.get('compute', {}).get('gpu', {}).get('type', 'default')}")
-    logger.info(f"Public evaluation enabled: {enable_public_evaluation}")
+    logger.info(f"Model: {config['model']}")
+    logger.info(f"Max iterations: {config['max_iterations']}")
+    logger.info(f"Docker image: {config['docker']['image']}")
+    logger.info(f"GPU specification: {config['gpus']}")
+    logger.info(f"Resource profile: {config['resources']['compute']['gpu']['type']}")
+    logger.info(f"Public evaluation enabled: {config['enable_public_evaluation']}")
     
-    if enable_public_evaluation:
-        logger.info(f"Public evaluation requirement: {'REQUIRED' if require_public_evaluation else 'OPTIONAL'}")
+    if config['enable_public_evaluation']:
+        logger.info(f"Public evaluation requirement: {'REQUIRED' if config['require_public_evaluation'] else 'OPTIONAL'}")
     
-    if dry_run:
+    if config['dry_run']:
         logger.info("Dry run mode - configuration validated successfully")
         print("\n=== Configuration Summary ===")
         print(f"Task: {task_config.display_name}")
         print(f"Version: {task_config.version}")
-        print(f"Model: {model_name}")
-        print(f"Max iterations: {max_iterations}")
+        print(f"Model: {config['model']}")
+        print(f"Max iterations: {config['max_iterations']}")
         print(f"Output directory: {run_dir}")
-        print(f"Resource profile: CPU={resource_config.get('compute', {}).get('cpu', {}).get('cores', 'N/A')} cores, "
-              f"RAM={resource_config.get('compute', {}).get('cpu', {}).get('memory_gb', 'N/A')}GB, "
-              f"GPU={resource_config.get('compute', {}).get('gpu', {}).get('type', 'none')}")
         
-        if enable_public_evaluation:
-            public_eval_text = f"Enabled (5 attempts, {'REQUIRED' if require_public_evaluation else 'OPTIONAL'})"
+        print(f"Resource profile: CPU={config['resources']['compute']['cpu']['cores']} cores, "
+              f"RAM={config['resources']['compute']['cpu']['memory_gb']}GB, "
+              f"GPU={config['resources']['compute']['gpu']['type']}")
+        
+        if config['enable_public_evaluation']:
+            public_eval_text = f"Enabled (5 attempts, {'REQUIRED' if config['require_public_evaluation'] else 'OPTIONAL'})"
         else:
             public_eval_text = "Disabled"
         print(f"Public evaluation: {public_eval_text}")
@@ -123,21 +103,23 @@ def bioagents(cfg: DictConfig) -> None:
             print(f"- {metric.name}: {metric.threshold} on {metric.dataset}")
         return
     
-    # Run the pipeline with resource configuration
+    breakpoint()
+    
+    # Run the pipeline
     asyncio.run(run_pipeline(
         task_config=task_config,
         task_dir=task_dir,
         run_dir=run_dir,
         agent_configs=agent_configs,
         tools=tools,
-        model_name=model_name,
-        max_iterations=max_iterations,
-        docker_config=docker_config,
-        gpu_spec=gpu_spec,
-        team_config=team_config,
-        resource_config=resource_config,
-        enable_public_evaluation=enable_public_evaluation,
-        require_public_evaluation=require_public_evaluation
+        model_name=config['model'],
+        max_iterations=config['max_iterations'],
+        docker_config=config['docker'],
+        gpu_spec=config['gpus'],
+        team_config=config['team_composition'],
+        resource_config=config['resources'],
+        enable_public_evaluation=config['enable_public_evaluation'],
+        require_public_evaluation=config['require_public_evaluation']
     ))
 
 

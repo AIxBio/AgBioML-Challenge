@@ -12,7 +12,7 @@ from autogen_agentchat.messages import TextMessage
 from autogen_core import CancellationToken
 
 from ..config.schemas import TaskConfig
-from ..config.loader import format_task_context
+from ..config.loader import format_task_context, get_private_test_file
 from ..agents.factory import create_team_a, create_team_b
 from ..tools import initialize_notebook, read_notebook, write_notebook, set_evaluator, read_notebook_summary
 from ..evaluation.public_evaluator import PublicEvaluator
@@ -214,12 +214,6 @@ async def run_pipeline(
             shutil.copy2(src, dst)
             logger.info(f"Copied data file: {src} -> {dst}")
     
-    # Ensure agents have access to test set features (but NOT labels)
-    # The agent data should include:
-    # - betas.arrow and metadata.arrow (training data with features and labels)
-    # - betas_heldout_public.arrow (public test features only)
-    # - betas_heldout_private.arrow (private test features only)
-    
     # Initialize notebook in run directory
     notebook_path = run_dir / "lab_notebook.md"
     initialize_notebook(notebook_path)
@@ -227,24 +221,10 @@ async def run_pipeline(
     # Create task context for agents with resource config
     task_context = format_task_context(task_config, resource_config, enable_public_evaluation)
     
-    # Set default configurations if not provided
-    if docker_config is None:
-        docker_config = {
-            "image": "millerh1/bioagents:latest",
-            "timeout": 3600,
-            "work_dir": str(run_dir)  # This will be the working directory for the container
-        }
-    else:
-        # Ensure work_dir is set to run_dir if not provided
-        if "work_dir" not in docker_config:
-            docker_config["work_dir"] = str(run_dir)
-    
-    if team_config is None:
-        team_config = {
-            "planning_team": ["principal_scientist", "bioinformatics_expert", "ml_expert"],
-            "implementation_team": ["implementation_engineer"],
-            "review_team": ["data_science_critic"]
-        }
+
+    # Ensure work_dir is set to run_dir if not provided
+    if "work_dir" not in docker_config:
+        docker_config["work_dir"] = str(run_dir)
     
     # Initialize teams with enhanced configuration
     team_a = await create_team_a(
@@ -252,7 +232,7 @@ async def run_pipeline(
         tools=tools,
         model_name=model_name,
         task_context=task_context,
-        team_composition=team_config.get("planning_team", ["principal_scientist", "bioinformatics_expert", "ml_expert"]),
+        team_composition=team_config['planning_team'],
         enable_public_evaluation=enable_public_evaluation
     )
     
@@ -265,8 +245,8 @@ async def run_pipeline(
         gpu_spec=gpu_spec,
         working_dir=str(run_dir),
         team_composition={
-            "implementation_team": team_config.get("implementation_team", ["implementation_engineer"]),
-            "review_team": team_config.get("review_team", ["data_science_critic"])
+            "implementation_team": team_config['implementation_team'],
+            "review_team": team_config['review_team']
         },
         enable_public_evaluation=enable_public_evaluation
     )
@@ -313,11 +293,12 @@ async def run_pipeline(
                 response_content = team_a_response.chat_message.content
                 
                 # Check if this looks like a real completion (mentions actual results/files)
+                # TODO: This is a bit janky... We should have a structured checklist we look for.
                 completion_indicators = [
+                    "all task requirements have been met",
                     "predictions.arrow file has been validated",
                     "performance targets have been met",
-                    "evaluation results show",
-                    "Team B has successfully implemented",
+                    "evaluation results have been documented in output report",
                     "all deliverables are complete and verified"
                 ]
                 
@@ -331,12 +312,12 @@ async def run_pipeline(
                     # Create detailed message about what's missing
                     missing_evidence_msg = f"""WARNING: Team A used TASK_COMPLETE but the message lacks evidence of actual completion.
 
-Expected completion evidence includes affirming the following in your message:
-- "predictions.arrow file has been validated" 
-- "performance targets have been met"
-- "evaluation results show [specific metrics]"
-- "Team B has successfully implemented [the solution]"
-- "all deliverables are complete and verified"
+Expected completion evidence includes affirming ALL of the following in your message:
+- "All task requirements have been met."
+- "predictions.arrow file has been validated."
+- "Performance targets have been met."
+- "Evaluation results have been documented in output report."
+- "All deliverables are complete and verified."
 
 Found not all of these indicators are present in the completion message. The project appears incomplete.
 
@@ -359,9 +340,10 @@ Team A should verify all requirements are met before using TASK_COMPLETE."""
                 else:
                     # Check if predictions.arrow exists and has correct format
                     predictions_file = run_dir / "predictions.arrow"
+                    target_column = task_config.evaluation.target_column or "predicted_value"
                     
                     # Validate predictions file
-                    is_valid, validation_message = validate_predictions_file(predictions_file, private_sample_ids)
+                    is_valid, validation_message = validate_predictions_file(predictions_file, private_sample_ids, target_column)
                     
                     # Check if public evaluation was required but not used
                     public_eval_check_passed = True
@@ -410,14 +392,14 @@ Team A should verify all requirements are met before using TASK_COMPLETE."""
                         
                         if not is_valid:
                             corrective_parts.append(f"Predictions file validation failed: {validation_message}")
-                            corrective_parts.append("""
+                            corrective_parts.append(f"""
 REQUIRED FORMAT for predictions.arrow:
 - Must be a valid Arrow/Feather file
-- Must contain exactly these columns: 'sample_id' and 'predicted_age'
+- Must contain exactly these columns: 'sample_id' and '{target_column}'
 - sample_id: unique identifiers for each sample (no duplicates, no null values)
-- predicted_age: numeric predictions (no null values)
-- Must contain predictions for ALL samples in betas_heldout_private.arrow (private test set ONLY)
-- Do NOT include predictions for public test set samples""")
+- {target_column}: numeric predictions (no null values)
+- Must contain predictions for ALL samples in {get_private_test_file(task_config)} (private test set ONLY)
+- Do NOT include predictions for public test set samples if public evaluation is enabled""")
                         
                         if not public_eval_check_passed:
                             corrective_parts.append(public_eval_message)
@@ -552,7 +534,7 @@ REMINDER OF WORKFLOW:
         logger.info("Docker executor stopped")
 
 
-def validate_predictions_file(predictions_path: Path, expected_sample_ids: set = None) -> tuple[bool, str]:
+def validate_predictions_file(predictions_path: Path, expected_sample_ids: set = None, target_column: str = "predicted_value") -> tuple[bool, str]:
     """
     Validate that predictions.arrow has the correct format and contains predictions for the private test set.
     
@@ -562,6 +544,7 @@ def validate_predictions_file(predictions_path: Path, expected_sample_ids: set =
     Args:
         predictions_path: Path to the predictions.arrow file
         expected_sample_ids: Set of expected sample IDs from private test set (optional)
+        target_column: Target column for evaluation
         
     Returns:
         Tuple of (is_valid, error_message)
@@ -580,7 +563,7 @@ def validate_predictions_file(predictions_path: Path, expected_sample_ids: set =
             return False, f"Cannot read predictions.arrow file: {str(e)}"
         
         # Check required columns
-        required_columns = {'sample_id', 'predicted_age'}
+        required_columns = {'sample_id', target_column}
         actual_columns = set(df.columns)
         
         if not required_columns.issubset(actual_columns):
@@ -595,12 +578,12 @@ def validate_predictions_file(predictions_path: Path, expected_sample_ids: set =
         if df['sample_id'].isnull().any():
             return False, "sample_id column contains null values"
         
-        if df['predicted_age'].isnull().any():
-            return False, "predicted_age column contains null values"
+        if df[target_column].isnull().any():
+            return False, f"{target_column} column contains null values"
         
         # Check that predicted_age is numeric
-        if not pd.api.types.is_numeric_dtype(df['predicted_age']):
-            return False, "predicted_age column must be numeric"
+        if not pd.api.types.is_numeric_dtype(df[target_column]):
+            return False, f"{target_column} column must be numeric"
         
         # Check for duplicate sample_ids
         if df['sample_id'].duplicated().any():

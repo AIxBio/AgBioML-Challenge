@@ -29,6 +29,11 @@ class EvaluationConfig(BaseModel):
     process: Optional[str] = None
     metrics: List[EvaluationMetric]
     required_outputs: List[str]
+    
+    # New workflow template system
+    workflow_template: Optional[str] = None  # e.g., "standard_ml_prediction", "time_series_prediction"
+    target_column: Optional[str] = None      # e.g., "predicted_age", "score", "class"
+    custom_workflow: Optional[str] = None    # For tasks that need completely custom workflows
 
 
 class DockerConfig(BaseModel):
@@ -58,8 +63,7 @@ class TaskConfig(BaseModel):
     task_description: str
     project_goal: str
     available_data: AvailableData
-    data_completeness: str
-    prediction_requirements: Optional[str] = None
+    data_details: str
     evaluation: EvaluationConfig
     docker: DockerConfig
     

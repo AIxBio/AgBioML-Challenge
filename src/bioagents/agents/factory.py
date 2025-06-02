@@ -338,23 +338,9 @@ async def create_team_b(
     Returns:
         Tuple of (EngineerSociety instance, DockerCommandLineCodeExecutor instance)
     """
-    # Set default team composition if not provided
-    if team_composition is None:
-        team_composition = {
-            "implementation_team": ["implementation_engineer"],
-            "review_team": ["data_science_critic"]
-        }
-    
-    # Set default docker config if not provided
-    if docker_config is None:
-        docker_config = {
-            "image": "millerh1/bioagents:latest",
-            "timeout": 3600,
-            "work_dir": working_dir
-        }
     
     # Initialize engineer
-    implementation_agents = team_composition.get("implementation_team", ["implementation_engineer"])
+    implementation_agents = team_composition['implementation_team']
     engineer_agent = initialize_agents(
         agent_configs=agent_configs,
         selected_agents=implementation_agents,
@@ -380,9 +366,9 @@ async def create_team_b(
     
     code_executor = LimitedOutputDockerExecutor(
         max_output_chars=3000,  # Limit output to 3000 characters
-        image=docker_config.get("image", "millerh1/bioagents:latest"),
-        work_dir=docker_config.get("work_dir", working_dir),
-        timeout=docker_config.get("timeout", 3600),
+        image=docker_config['image'],
+        work_dir=docker_config['work_dir'],
+        timeout=docker_config['timeout'],
         device_requests=device_requests
     )
     await code_executor.start()

@@ -46,7 +46,7 @@ available_data:
     - path: data/eval/file1.arrow
       description: Description of evaluation data
 
-data_completeness: |
+data_details: |
   Statement about data sufficiency and any important notes.
 
 evaluation:

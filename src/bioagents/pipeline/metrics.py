@@ -217,7 +217,6 @@ class PipelineMetricsTracker:
         print(f"Total Duration: {self.metrics.total_duration_seconds:.2f} seconds ({self.metrics.total_duration_seconds/60:.1f} minutes)")
         print(f"Iterations Completed: {self.metrics.iterations_completed}")
         print(f"Completion Reason: {self.metrics.completion_reason}")
-        print(f"Automatic Evaluation: {'✅ Completed' if self.metrics.evaluation_completed else '❌ Not completed'}")
         print()
         print("MESSAGE COUNTS:")
         print(f"  Total Messages: {self.metrics.total_messages}")

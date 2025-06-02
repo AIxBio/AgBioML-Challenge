@@ -3,7 +3,7 @@
 import yaml
 from pathlib import Path
 from pydantic import ValidationError
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import logging
 
 from .schemas import TaskConfig, AgentsConfig, AutonomousWorkflow, ReferenceSection, AvailableData, DataFile, EvaluationConfig, EvaluationMetric, DockerConfig
@@ -47,7 +47,10 @@ def load_and_validate_task(task_dir: Path) -> TaskConfig:
         task_data['evaluation'] = EvaluationConfig(
             process=process, 
             metrics=metrics, 
-            required_outputs=required_outputs
+            required_outputs=required_outputs,
+            workflow_template=task_data['evaluation'].get('workflow_template', None),
+            target_column=task_data['evaluation'].get('target_column', None),
+            custom_workflow=task_data['evaluation'].get('custom_workflow', None)
         )
     
     if 'docker' in task_data and isinstance(task_data['docker'], dict):
@@ -186,29 +189,80 @@ def format_task_context(task_config: TaskConfig, resource_config: Dict[str, Any]
             context_parts.append(f"- **{data_file.path}**: {data_file.description}")
     
     # Add data completeness note if present
-    if hasattr(task_config, 'data_completeness') and task_config.data_completeness:
-        context_parts.append(f"\n## Data Completeness\n{task_config.data_completeness}")
+    if hasattr(task_config, 'data_details') and task_config.data_details:
+        context_parts.append(f"\n## Data Details\n{task_config.data_details}")
     
-    # Prediction requirements - conditionally include public evaluation
-    if hasattr(task_config, 'prediction_requirements') and task_config.prediction_requirements:
-        if enable_public_evaluation:
-            context_parts.append(f"\n## Prediction Requirements\n{task_config.prediction_requirements}")
-        else:
-            # Provide alternative requirements without public evaluation
-            context_parts.append("\n## Prediction Requirements")
-            context_parts.append("""To complete the evaluation, you MUST:
+    # Prediction requirements - use workflow templates
+    if task_config.evaluation and (task_config.evaluation.workflow_template or task_config.evaluation.custom_workflow):
+        context_parts.append("\n## Prediction Requirements")
+        
+        if task_config.evaluation.workflow_template:
+            # Use template-based approach
+            templates = load_workflow_templates()
+            template_name = task_config.evaluation.workflow_template
             
-1. **TRAIN YOUR MODEL:**
-   - Use the training data (betas.arrow and metadata.arrow) to build your model
-   - Apply appropriate preprocessing, feature selection, and model training
-   
-2. **GENERATE FINAL PREDICTIONS:**
-   - Generate predictions for betas_heldout_private.arrow
-   - Save final predictions as 'predictions.arrow' with:
-     - Column 'sample_id': Sample identifiers matching those in betas_heldout_private.arrow
-     - Column 'predicted_age': Your model's age predictions (float)
-   
-Note: Public evaluation is not available for this run. Generate your best model and submit final predictions.""")
+            if template_name not in templates:
+                logger.warning(f"Workflow template '{template_name}' not found. Available templates: {list(templates.keys())}")
+                context_parts.append("Workflow template not found. Please specify prediction requirements manually.")
+            else:
+                template = templates[template_name]
+                
+                # Determine which workflow to use based on public evaluation setting
+                if enable_public_evaluation:
+                    # Combine all sections for public evaluation workflow
+                    workflow_sections = []
+                    if 'training_section' in template:
+                        workflow_sections.append(template['training_section'])
+                    if 'public_evaluation_section' in template:
+                        workflow_sections.append(template['public_evaluation_section'])
+                    if 'final_prediction_section' in template:
+                        workflow_sections.append(template['final_prediction_section'])
+                    workflow_text = "\n\n".join(workflow_sections)
+                else:
+                    # Use private-only workflow
+                    workflow_text = template.get('private_only_workflow', 'No private-only workflow defined for this template.')
+                
+                # Substitute variables in the workflow text
+                substitutions = {
+                    'training_files': get_training_files(task_config),
+                    'public_test_file': get_public_test_file(task_config),
+                    'private_test_file': get_private_test_file(task_config),
+                    'target_column': task_config.evaluation.target_column or 'predicted_value'
+                }
+                
+                try:
+                    workflow_text = workflow_text.format(**substitutions)
+                    context_parts.append(workflow_text)
+                except KeyError as e:
+                    logger.warning(f"Template substitution failed for variable: {e}")
+                    context_parts.append(f"Template processing error. Missing variable: {e}")
+        
+        elif task_config.evaluation.custom_workflow:
+            # Use custom workflow text directly
+            if enable_public_evaluation:
+                context_parts.append(task_config.evaluation.custom_workflow)
+            else:
+                # For custom workflows, we need to modify them to remove public evaluation
+                # This is a fallback - ideally custom workflows should be template-aware
+                custom_text = task_config.evaluation.custom_workflow
+                # Simple removal of public evaluation sections (basic approach)
+                lines = custom_text.split('\n')
+                filtered_lines = []
+                skip_section = False
+                
+                for line in lines:
+                    if any(phrase in line.upper() for phrase in ['PUBLIC EVALUATION', 'evaluate_on_public_test']):
+                        skip_section = True
+                        continue
+                    if skip_section and (line.strip() == '' or line.startswith('## ') or line.startswith('# ')):
+                        skip_section = False
+                    if not skip_section:
+                        filtered_lines.append(line)
+                
+                modified_text = '\n'.join(filtered_lines)
+                if modified_text != custom_text:
+                    modified_text += "\n\nNote: Public evaluation sections have been removed as public evaluation is disabled."
+                context_parts.append(modified_text)
     
     # Evaluation criteria
     if task_config.evaluation:
@@ -253,4 +307,56 @@ Note: Public evaluation is not available for this run. Generate your best model 
             context_parts.append(f"### Time Limits")
             context_parts.append(f"- Code execution timeout: {resource_config['timeout'].get('code_execution', 300)} seconds")
     
-    return "\n\n".join(context_parts) 
+    return "\n\n".join(context_parts)
+
+
+def load_workflow_templates() -> Dict[str, Any]:
+    """
+    Load workflow templates from the templates YAML file.
+    
+    Returns:
+        Dictionary of workflow templates
+    """
+    templates_path = Path(__file__).parent / "workflow_templates.yaml"
+    
+    if not templates_path.exists():
+        logger.warning(f"Workflow templates file not found: {templates_path}")
+        return {}
+    
+    with open(templates_path, 'r') as f:
+        templates = yaml.safe_load(f)
+    
+    logger.debug(f"Loaded {len(templates)} workflow templates")
+    return templates
+
+
+def get_training_files(task_config: TaskConfig) -> str:
+    """Extract training data files from task config."""
+    training_files = []
+    for data_file in task_config.available_data.agent_data:
+        # Files that contain training data (not test sets)
+        if not any(keyword in data_file.path.lower() for keyword in ['heldout', 'test', 'validation']):
+            training_files.append(data_file.path)
+    
+    if len(training_files) == 1:
+        return training_files[0]
+    elif len(training_files) > 1:
+        return f"{', '.join(training_files[:-1])} and {training_files[-1]}"
+    else:
+        return "training data"
+
+
+def get_public_test_file(task_config: TaskConfig) -> str:
+    """Extract public test data file from task config."""
+    for data_file in task_config.available_data.agent_data:
+        if 'public' in data_file.path.lower() and 'heldout' in data_file.path.lower():
+            return data_file.path
+    return "public test data"
+
+
+def get_private_test_file(task_config: TaskConfig) -> str:
+    """Extract private test data file from task config."""
+    for data_file in task_config.available_data.agent_data:
+        if 'private' in data_file.path.lower() and 'heldout' in data_file.path.lower():
+            return data_file.path
+    return "private test data" 

@@ -31,16 +31,12 @@ available_data:
     - path: data/agent/betas_heldout_private.arrow
       description: Private test set methylation data (50% of held-out data, features only) - DNA methylation data ONLY
   eval_data:
-    - path: data/eval/betas_heldout.arrow
-      description: Full held-out test set of methylation values
-    - path: data/eval/meta_heldout.arrow
-      description: Full held-out test set metadata with true ages (NOT accessible to agents)
     - path: data/eval/meta_heldout_public.arrow
-      description: Public test set metadata with true ages (NOT accessible to agents)
+      description: Public test set beta values with true ages (NOT accessible to agents)
     - path: data/eval/meta_heldout_private.arrow
       description: Private test set metadata with true ages (NOT accessible to agents)
 
-data_completeness: |
+data_details: |
   IMPORTANT: All data necessary to complete this task has been provided. The agents MUST work with these files:
   - betas.arrow and metadata.arrow contain all required information for training
   - Sample IDs in both files match perfectly - there are NO missing mappings
@@ -56,21 +52,7 @@ feature_constraints: |
   
   Your model MUST work with DNA methylation data ONLY. You will NOT have access to gender, sex, 
   tissue type, or any other clinical/demographic information at test time (deployment).
-  
-  **FORBIDDEN FEATURES:**
-  - Gender/sex information
-  - Tissue type information  
-  - Any clinical or demographic variables beyond DNA methylation
-  
-  **ALLOWED FEATURES:**
-  - ONLY DNA methylation beta values (CpG sites)
-  - NO other metadata fields
-  
-  **WHY THIS MATTERS:**
-  In real-world deployment (forensics, clinical applications), you will only receive DNA methylation 
-  data without any additional information. Models that depend on gender, sex, or tissue type will 
-  FAIL in production.
-  
+
   **VALIDATION REQUIREMENT:**
   You MUST demonstrate that your model works using ONLY the methylation features. Any model that 
   uses metadata beyond sample IDs will be rejected as non-deployable.
@@ -78,25 +60,9 @@ feature_constraints: |
   The metadata.arrow file contains additional information for your analysis and understanding, 
   but your final model must be trained using ONLY the methylation beta values from betas.arrow.
 
-prediction_requirements: |
-  To complete the evaluation, you MUST follow a two-stage process:
-  
-  1. **PUBLIC EVALUATION (REQUIRED FIRST):**
-     - Train your model using the training data (betas.arrow and metadata.arrow)
-     - Generate predictions for betas_heldout_public.arrow and save as 'predictions_public.arrow'
-     - Use the evaluate_on_public_test tool to assess performance (up to 5 attempts)
-     - Refine your model based on public test results
-  
-  2. **FINAL PREDICTIONS (AFTER PUBLIC EVALUATION):**
-     - Once satisfied with public test performance, generate predictions for betas_heldout_private.arrow
-     - Save final predictions as 'predictions.arrow' with:
-       - Column 'sample_id': Sample identifiers matching those in betas_heldout_private.arrow
-     - Column 'predicted_age': Your model's age predictions (float)
-  
-  CRITICAL: You MUST evaluate on the public test set at least once before creating final predictions.
-  The public test represents 50% of the final test data and gives you reliable performance estimates.
-
 evaluation:
+  workflow_template: standard_ml_prediction
+  target_column: predicted_age
   metrics:
     - name: pearson_correlation
       threshold: 0.9
@@ -108,7 +74,6 @@ evaluation:
     - predictions.arrow (predictions for held-out test set - CRITICAL)
     - model_checkpoint (saved model file with preprocessing components)
     - inference_script.py (script to generate predictions on new data)
-    - evaluation_results.json (your own internal evaluation metrics)
     - analysis_report.md (markdown report documenting methodology and results)
 
 

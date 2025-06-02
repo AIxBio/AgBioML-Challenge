@@ -29,13 +29,13 @@ warnings.filterwarnings('ignore')
 # Set up publication-quality plotting
 plt.rcParams.update({
     'figure.figsize': [12, 8],
-    'font.size': 11,
-    'axes.labelsize': 12,
-    'axes.titlesize': 14,
-    'xtick.labelsize': 10,
-    'ytick.labelsize': 10,
-    'legend.fontsize': 10,
-    'figure.titlesize': 16,
+    'font.size': 14,
+    'axes.labelsize': 15,
+    'axes.titlesize': 17,
+    'xtick.labelsize': 13,
+    'ytick.labelsize': 13,
+    'legend.fontsize': 13,
+    'figure.titlesize': 20,
     'axes.grid': True,
     'grid.alpha': 0.3
 })
@@ -301,15 +301,15 @@ class MultirunAnalyzer:
         
         # Create figure with subplots (2x2 grid for performance only)
         fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-        fig.suptitle('Model Performance Comparison', fontsize=16, fontweight='bold')
+        fig.suptitle('Model Performance Comparison', fontsize=20, fontweight='bold')
         
         # Helper function to create grouped bar plots with error bars
         def create_grouped_errorbar_plot(ax, data, y_col, title, ylabel, target_line=None):
             if data.empty:
                 ax.text(0.5, 0.5, 'No completed runs\nwith performance data', 
-                       transform=ax.transAxes, ha='center', va='center', fontsize=12)
+                       transform=ax.transAxes, ha='center', va='center', fontsize=17)
                 ax.set_title(title)
-                ax.set_ylabel(ylabel)
+                ax.set_ylabel(ylabel, fontsize=20)
                 return
             
             # Calculate stats by model and public evaluation
@@ -337,7 +337,7 @@ class MultirunAnalyzer:
                             'data': subset[y_col]
                         }
             
-            # Create bars and track legend entries
+            # Create bars and track legend entries for each model-evaluation combination
             legend_entries = []
             for i, model in enumerate(models):
                 # Public eval (full color) - leftmost
@@ -347,9 +347,8 @@ class MultirunAnalyzer:
                     bar1 = ax.bar(i - width/2, s['mean'], width, yerr=s['ci_95'], 
                                  capsize=5, alpha=0.7, color=color)
                     
-                    # Add legend entry only once per condition type
-                    if not any('+ public eval' in entry[1] for entry in legend_entries):
-                        legend_entries.append((bar1[0], f'+ public eval'))
+                    # Add legend entry for this specific model-evaluation combination
+                    legend_entries.append((bar1[0], f'{model} + public eval'))
                     
                     # Add jittered points
                     x_jitter = np.random.normal(i - width/2, 0.02, len(s['data']))
@@ -357,7 +356,7 @@ class MultirunAnalyzer:
                     
                     # Add value label with avg prefix
                     ax.text(i - width/2, s['mean'] + s['ci_95'] * 1.1, f'avg: {s["mean"]:.3f}',
-                           ha='center', va='bottom', fontweight='bold', fontsize=9)
+                           ha='center', va='bottom', fontweight='bold', fontsize=14)
                 
                 # Private only (grayed color) - rightmost
                 if (model, False) in stats:
@@ -366,9 +365,8 @@ class MultirunAnalyzer:
                     bar2 = ax.bar(i + width/2, s['mean'], width, yerr=s['ci_95'],
                                  capsize=5, alpha=0.7, color=color)
                     
-                    # Add legend entry only once per condition type
-                    if not any('private only' in entry[1] for entry in legend_entries):
-                        legend_entries.append((bar2[0], f'private only'))
+                    # Add legend entry for this specific model-evaluation combination
+                    legend_entries.append((bar2[0], f'{model} private only'))
                     
                     # Add jittered points
                     x_jitter = np.random.normal(i + width/2, 0.02, len(s['data']))
@@ -376,7 +374,7 @@ class MultirunAnalyzer:
                     
                     # Add value label with avg prefix
                     ax.text(i + width/2, s['mean'] + s['ci_95'] * 1.1, f'avg: {s["mean"]:.3f}',
-                           ha='center', va='bottom', fontweight='bold', fontsize=9)
+                           ha='center', va='bottom', fontweight='bold', fontsize=14)
             
             # Add target line if specified
             if target_line is not None:
@@ -384,17 +382,17 @@ class MultirunAnalyzer:
                           label=target_line['label'])
                 max_top_value = max(max_top_value, target_line['value'])
             
-            # Set y-axis limit to 9% above the maximum value
+            # Set y-axis limit to 26% above the maximum value
             if max_top_value > 0:
-                ax.set_ylim(bottom=0, top=max_top_value * 1.09)
+                ax.set_ylim(bottom=0, top=max_top_value * 1.26)
             
             # Formatting
             ax.set_title(title)
-            ax.set_ylabel(ylabel)
+            ax.set_ylabel(ylabel, fontsize=20)
             ax.set_xticks(x_pos)
-            ax.set_xticklabels(models)
+            ax.set_xticklabels(models, fontsize=22)
             
-            # Add legend with both condition types
+            # Add legend with all model-evaluation combinations
             if legend_entries:
                 legend_handles, legend_labels = zip(*legend_entries)
                 ax.legend(legend_handles, legend_labels)
@@ -418,7 +416,7 @@ class MultirunAnalyzer:
                         rates[(model, public_eval)] = rate
                         max_rate = max(max_rate, rate)
             
-            # Create bars and track legend entries
+            # Create bars and track legend entries for each model-evaluation combination
             legend_entries = []
             for i, model in enumerate(models):
                 # Public eval (full color) - leftmost
@@ -427,8 +425,8 @@ class MultirunAnalyzer:
                     color = color_mapping[f'{model} + public eval']
                     bar1 = ax.bar(i - width/2, rate, width, alpha=0.7, color=color)
                     
-                    if not any('+ public eval' in entry[1] for entry in legend_entries):
-                        legend_entries.append((bar1[0], f'+ public eval'))
+                    # Add legend entry for this specific model-evaluation combination
+                    legend_entries.append((bar1[0], f'{model} + public eval'))
                     
                     ax.text(i - width/2, rate + max_rate * 0.02, f'avg: {rate:.1%}',
                            ha='center', va='bottom', fontweight='bold')
@@ -439,19 +437,19 @@ class MultirunAnalyzer:
                     color = color_mapping[model]
                     bar2 = ax.bar(i + width/2, rate, width, alpha=0.7, color=color)
                     
-                    if not any('private only' in entry[1] for entry in legend_entries):
-                        legend_entries.append((bar2[0], f'private only'))
+                    # Add legend entry for this specific model-evaluation combination
+                    legend_entries.append((bar2[0], f'{model} private only'))
                     
                     ax.text(i + width/2, rate + max_rate * 0.02, f'avg: {rate:.1%}',
                            ha='center', va='bottom', fontweight='bold')
             
             ax.set_title('Task Completion Rate (All Runs)')
-            ax.set_ylabel('Completion Rate (↑)')
+            ax.set_ylabel('Completion Rate (↑)', fontsize=20)
             ax.set_xticks(x_pos)
-            ax.set_xticklabels(models)
+            ax.set_xticklabels(models, fontsize=22)
             ax.set_ylim(0, max_rate * 1.09)
             
-            # Add legend
+            # Add legend with all model-evaluation combinations
             if legend_entries:
                 legend_handles, legend_labels = zip(*legend_entries)
                 ax.legend(legend_handles, legend_labels)
@@ -496,15 +494,15 @@ class MultirunAnalyzer:
         
         # Create figure with subplots (2x3 grid for resource + efficiency)
         fig, axes = plt.subplots(2, 3, figsize=(24, 12))
-        fig.suptitle('Resource Usage & Efficiency Analysis', fontsize=16, fontweight='bold')
+        fig.suptitle('Resource Usage & Efficiency Analysis', fontsize=20, fontweight='bold')
         
         # Helper function to create grouped bar plots for resource metrics
-        def create_resource_grouped_plot(ax, data, y_col, title, ylabel):
+        def create_resource_grouped_plot(ax, data, y_col, title, ylabel, scale_factor=1.0, unit_suffix=""):
             if data.empty or data[y_col].isna().all():
                 ax.text(0.5, 0.5, 'No data available', 
-                       transform=ax.transAxes, ha='center', va='center', fontsize=12)
+                       transform=ax.transAxes, ha='center', va='center', fontsize=17)
                 ax.set_title(title)
-                ax.set_ylabel(ylabel)
+                ax.set_ylabel(ylabel, fontsize=20)
                 return
             
             # Calculate stats by model and public evaluation
@@ -519,8 +517,10 @@ class MultirunAnalyzer:
                 for public_eval in [True, False]:
                     subset = data[(data['model'] == model) & (data['public_evaluation'] == public_eval)]
                     if not subset.empty and not subset[y_col].isna().all():
-                        mean_val = subset[y_col].mean()
-                        sem_val = subset[y_col].sem()
+                        # Apply scaling factor (e.g., divide by 1M for tokens)
+                        scaled_values = subset[y_col] / scale_factor
+                        mean_val = scaled_values.mean()
+                        sem_val = scaled_values.sem()
                         ci_95 = 1.96 * sem_val
                         top_value = mean_val + ci_95
                         max_top_value = max(max_top_value, top_value)
@@ -529,10 +529,10 @@ class MultirunAnalyzer:
                             'mean': mean_val,
                             'sem': sem_val,
                             'ci_95': ci_95,
-                            'data': subset[y_col]
+                            'data': scaled_values
                         }
             
-            # Create bars
+            # Create bars and track legend entries for each model-evaluation combination
             legend_entries = []
             for i, model in enumerate(models):
                 # Public eval (full color) - leftmost
@@ -542,8 +542,8 @@ class MultirunAnalyzer:
                     bar1 = ax.bar(i - width/2, s['mean'], width, yerr=s['ci_95'], 
                                  capsize=5, alpha=0.7, color=color)
                     
-                    if not any('+ public eval' in entry[1] for entry in legend_entries):
-                        legend_entries.append((bar1[0], f'+ public eval'))
+                    # Add legend entry for this specific model-evaluation combination
+                    legend_entries.append((bar1[0], f'{model} + public eval'))
                     
                     # Add jittered points
                     x_jitter = np.random.normal(i - width/2, 0.02, len(s['data']))
@@ -553,7 +553,7 @@ class MultirunAnalyzer:
                     if 'cost' in y_col.lower():
                         label = f'avg: ${s["mean"]:.2f}'
                     elif 'token' in y_col.lower() and 'ratio' not in y_col.lower():
-                        label = f'avg: {s["mean"]:.0f}'
+                        label = f'avg: {s["mean"]:.1f}{unit_suffix}'
                     elif 'minute' in y_col.lower():
                         label = f'avg: {s["mean"]:.0f}m'
                     elif 'iteration' in y_col.lower():
@@ -563,7 +563,7 @@ class MultirunAnalyzer:
                     else:
                         label = f'avg: {s["mean"]:.1f}'
                     ax.text(i - width/2, s['mean'] + s['ci_95'] * 1.1, label,
-                           ha='center', va='bottom', fontweight='bold', fontsize=9)
+                           ha='center', va='bottom', fontweight='bold', fontsize=14)
                 
                 # Private only (grayed color) - rightmost
                 if (model, False) in stats:
@@ -572,8 +572,8 @@ class MultirunAnalyzer:
                     bar2 = ax.bar(i + width/2, s['mean'], width, yerr=s['ci_95'],
                                  capsize=5, alpha=0.7, color=color)
                     
-                    if not any('private only' in entry[1] for entry in legend_entries):
-                        legend_entries.append((bar2[0], f'private only'))
+                    # Add legend entry for this specific model-evaluation combination
+                    legend_entries.append((bar2[0], f'{model} private only'))
                     
                     # Add jittered points
                     x_jitter = np.random.normal(i + width/2, 0.02, len(s['data']))
@@ -583,7 +583,7 @@ class MultirunAnalyzer:
                     if 'cost' in y_col.lower():
                         label = f'avg: ${s["mean"]:.2f}'
                     elif 'token' in y_col.lower() and 'ratio' not in y_col.lower():
-                        label = f'avg: {s["mean"]:.0f}'
+                        label = f'avg: {s["mean"]:.1f}{unit_suffix}'
                     elif 'minute' in y_col.lower():
                         label = f'avg: {s["mean"]:.0f}m'
                     elif 'iteration' in y_col.lower():
@@ -593,19 +593,19 @@ class MultirunAnalyzer:
                     else:
                         label = f'avg: {s["mean"]:.1f}'
                     ax.text(i + width/2, s['mean'] + s['ci_95'] * 1.1, label,
-                           ha='center', va='bottom', fontweight='bold', fontsize=9)
+                           ha='center', va='bottom', fontweight='bold', fontsize=14)
             
-            # Set y-axis limit to 9% above the maximum value
+            # Set y-axis limit to 20% above the maximum value
             if max_top_value > 0:
-                ax.set_ylim(bottom=0, top=max_top_value * 1.09)
+                ax.set_ylim(bottom=0, top=max_top_value * 1.20)
             
             # Formatting
             ax.set_title(title)
-            ax.set_ylabel(ylabel)
+            ax.set_ylabel(ylabel, fontsize=20)
             ax.set_xticks(x_pos)
-            ax.set_xticklabels(models)
+            ax.set_xticklabels(models, fontsize=22)
             
-            # Add legend
+            # Add legend with all model-evaluation combinations
             if legend_entries:
                 legend_handles, legend_labels = zip(*legend_entries)
                 ax.legend(legend_handles, legend_labels)
@@ -613,13 +613,15 @@ class MultirunAnalyzer:
             ax.grid(True, alpha=0.3)
         
         # Row 1: Resource usage metrics
-        # Input Tokens
+        # Input Tokens (in millions)
         create_resource_grouped_plot(axes[0, 0], self.results_df, 'total_input_tokens',
-                                   'Total Input Tokens', 'Input Tokens (↓)')
+                                   'Total Input Tokens', 'Input Tokens in Millions (↓)', 
+                                   scale_factor=1_000_000, unit_suffix="M")
         
-        # Output Tokens
+        # Output Tokens (in millions)
         create_resource_grouped_plot(axes[0, 1], self.results_df, 'total_output_tokens',
-                                   'Total Output Tokens', 'Output Tokens (↓)')
+                                   'Total Output Tokens', 'Output Tokens in Millions (↓)', 
+                                   scale_factor=1_000_000, unit_suffix="M")
         
         # Runtime
         create_resource_grouped_plot(axes[0, 2], self.results_df, 'total_duration_minutes',

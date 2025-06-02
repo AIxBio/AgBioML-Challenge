@@ -1,0 +1,48 @@
+# Workflow Templates for BioAgents Tasks
+# These templates define standard workflows that can be reused across tasks
+
+standard_ml_prediction:
+  description: "Standard supervised ML prediction workflow with optional public evaluation"
+  
+  # Variables that can be substituted: {training_files}, {public_test_file}, {private_test_file}, {target_column}
+  
+  training_section: |
+    1. **TRAIN YOUR MODEL:**
+       - Use the training data ({training_files}) to build your model
+       - Apply appropriate preprocessing, feature selection, and model training
+       - Ensure your model can predict the target variable: {target_column}
+  
+  public_evaluation_section: |
+    2. **PUBLIC EVALUATION (REQUIRED FIRST):**
+       - Generate predictions for {public_test_file} and save as 'predictions_public.arrow'
+       - Use the evaluate_on_public_test tool to assess performance
+       - Refine your model based on public test results
+       - This represents ~50% of the final test data and gives reliable performance estimates
+  
+  final_prediction_section: |
+    3. **FINAL PREDICTIONS (AFTER PUBLIC EVALUATION):**
+       - Once satisfied with public test performance, generate predictions for {private_test_file}
+       - Save final predictions as 'predictions.arrow' with:
+         - Column 'sample_id': Sample identifiers matching those in {private_test_file}
+         - Column '{target_column}': Your model's predictions (numeric values)
+       
+       CRITICAL: You MUST evaluate on the public test set at least once before creating final predictions.
+  
+  private_only_workflow: |
+    To complete the evaluation, you MUST:
+    
+    1. **TRAIN YOUR MODEL:**
+       - Use the training data ({training_files}) to build your model
+       - Apply appropriate preprocessing, feature selection, and model training
+       
+    2. **GENERATE FINAL PREDICTIONS:**
+       - Generate predictions for {private_test_file}
+       - Save final predictions as 'predictions.arrow' with:
+         - Column 'sample_id': Sample identifiers matching those in {private_test_file}
+         - Column '{target_column}': Your model's predictions (numeric values)
+      
+    Note: Public evaluation is not available for this run. Generate your best model and submit final predictions.
+
+custom:
+  description: "Custom workflow - specify your own sections"
+  # For tasks that need completely custom workflows, fall back to custom text 
