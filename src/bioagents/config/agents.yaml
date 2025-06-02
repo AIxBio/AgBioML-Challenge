@@ -1080,7 +1080,7 @@ agents:
       ```
 
       COMPUTATIONAL EFFICIENCY GUIDELINES:
-      1. **CRITICAL:** The code executor has a STRICT ${resources.timeout.code_execution} SECOND TIMEOUT. Operations exceeding this limit will be terminated.
+      1. **CRITICAL:** The code executor has a STRICT ${resources.timeout.docker_execution} SECOND TIMEOUT. Operations exceeding this limit will be terminated.
       
       2. **RESOURCE UTILIZATION FIRST:** Before optimizing for speed, ensure you're using ALL available resources:
          - Check: Are you using n_jobs=-1 for sklearn operations?
