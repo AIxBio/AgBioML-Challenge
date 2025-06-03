@@ -1,4 +1,4 @@
-"""Pipeline metrics tracking for bioagents framework."""
+"""Pipeline metrics tracking for biomlagents framework."""
 
 import time
 import json

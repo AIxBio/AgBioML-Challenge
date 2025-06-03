@@ -1,4 +1,4 @@
-"""Entry point for running bioagents as a module."""
+"""Entry point for running biomlagents as a module."""
 
 from .cli import main
 

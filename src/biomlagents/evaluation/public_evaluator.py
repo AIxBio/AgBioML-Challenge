@@ -1,4 +1,4 @@
-"""Public test set evaluation for bioagents."""
+"""Public test set evaluation for biomlagents."""
 
 import pandas as pd
 import numpy as np

@@ -1,4 +1,4 @@
-"""Pipeline package for bioagents framework."""
+"""Pipeline package for biomlagents framework."""
 
 from .runner import run_pipeline, cleanup_temp_files, format_prompt
 

@@ -1,4 +1,4 @@
-"""Main pipeline runner for bioagents framework."""
+"""Main pipeline runner for biomlagents framework."""
 
 import os
 import asyncio

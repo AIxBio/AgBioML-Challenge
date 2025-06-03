@@ -1,4 +1,4 @@
-# Agentic BioML Challenge + BioAgents Framework
+# Agentic BioML Challenge + biomlagents Framework
 
 ## 📝 Challenge Description
 
@@ -15,9 +15,9 @@ The AgBioML Challenge is a competition to develop AI agents that can solve compl
 
 See full challenge description [here](https://livingmachines.substack.com/p/the-agentic-bioml-challenge).
 
-## 🤖 BioAgents Framework
+## 🤖 biomlagents Framework
 
-An autonomous agent framework for biomedical machine learning. BioAgents enables teams of AI agents to collaboratively solve complex biomedical ML challenges through planning, implementation, and critical review cycles.
+An autonomous agent framework for biomedical machine learning. biomlagents enables teams of AI agents to collaboratively solve complex biomedical ML challenges through planning, implementation, and critical review cycles.
 
 ### 🚀 Quick Start
 
@@ -46,13 +46,13 @@ PERPLEXITY_API_KEY=your_perplexity_key  # Optional
 
 ```bash
 # Run the challenge
-bioagents task_dir=challenges/01_basic_epigenetic_clock
+biomlagents task_dir=challenges/01_basic_epigenetic_clock
 
 # Run the challenge with a different model
-bioagents task_dir=challenges/01_basic_epigenetic_clock model=gpt-4o
+biomlagents task_dir=challenges/01_basic_epigenetic_clock model=gpt-4o
 
 # Custom configuration with fewer iterations
-bioagents task_dir=challenges/01_basic_epigenetic_clock \
+biomlagents task_dir=challenges/01_basic_epigenetic_clock \
     model=gpt-4o \
     max_iterations=15
 ```
@@ -79,7 +79,7 @@ bioagents task_dir=challenges/01_basic_epigenetic_clock \
 
 ### 🎯 Public Evaluation System
 
-BioAgents includes a public/private evaluation system that mirrors real ML competition workflows:
+biomlagents includes a public/private evaluation system that mirrors real ML competition workflows:
 
 **How It Works:**
 1. **Data Split**: Test data is split 50/50 into public and private subsets
@@ -99,17 +99,17 @@ BioAgents includes a public/private evaluation system that mirrors real ML compe
 
 ### 🎛️ Configuration System
 
-BioAgents uses [Hydra](https://hydra.cc/) for configuration management.
+biomlagents uses [Hydra](https://hydra.cc/) for configuration management.
 
 ```bash
 # View all available options
-bioagents --help
+biomlagents --help
 
 # View current configuration
-bioagents --cfg job task_dir=challenges/01_basic_epigenetic_clock
+biomlagents --cfg job task_dir=challenges/01_basic_epigenetic_clock
 
 # View Hydra configuration
-bioagents --cfg hydra task_dir=challenges/01_basic_epigenetic_clock
+biomlagents --cfg hydra task_dir=challenges/01_basic_epigenetic_clock
 ```
 
 ### Command Line Examples
@@ -117,14 +117,14 @@ bioagents --cfg hydra task_dir=challenges/01_basic_epigenetic_clock
 **Development & Testing**
 ```bash
 # Dry run validation
-bioagents task_dir=challenges/01_basic_epigenetic_clock dry_run=true
+biomlagents task_dir=challenges/01_basic_epigenetic_clock dry_run=true
 ```
 
 
 
 ### 📁 Output Management
 
-BioAgents automatically organizes outputs using Hydra's directory management:
+biomlagents automatically organizes outputs using Hydra's directory management:
 
 ```
 outputs/
@@ -145,7 +145,7 @@ Each run directory contains:
 #### Repository Structure
 
 ```
-├── src/bioagents/           # Core framework
+├── src/biomlagents/           # Core framework
 │   ├── agents/              # Agent implementations
 │   ├── config/              # Configuration schemas
 │   ├── pipeline/            # Execution pipeline
@@ -163,9 +163,9 @@ Each run directory contains:
 
 ### Multi-run Experiments
 
-BioAgents supports parallel execution of multirun experiments using Hydra's joblib launcher:
+biomlagents supports parallel execution of multirun experiments using Hydra's joblib launcher:
 
 ```bash
 # Parallel parameter sweeps (runs 4 jobs in parallel by default)
-bioagents --multirun +experiment=multirun_comparison task_dir=challenges/01_basic_epigenetic_clock model=gpt-4.1,gpt-4o enable_public_evaluation=true,false +seed=0,1,2,3 hydra.launcher.n_jobs=4
+biomlagents --multirun +experiment=multirun_comparison task_dir=challenges/01_basic_epigenetic_clock model=gpt-4.1,gpt-4o enable_public_evaluation=true,false +seed=0,1,2,3 hydra.launcher.n_jobs=4
 ```

@@ -8,7 +8,7 @@ from unittest.mock import Mock
 
 # import pytest  # Not needed - can run without pytest
 
-from src.bioagents.pipeline.metrics import PipelineMetricsTracker, PipelineMetrics
+from src.biomlagents.pipeline.metrics import PipelineMetricsTracker, PipelineMetrics
 from autogen_agentchat.base import Response
 from autogen_agentchat.messages import TextMessage
 from autogen_core.models import RequestUsage

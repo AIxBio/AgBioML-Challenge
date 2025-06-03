@@ -1,4 +1,4 @@
-"""Agents package for bioagents framework."""
+"""Agents package for biomlagents framework."""
 
 from .base import TeamAPlanning, EngineerSociety
 from .factory import initialize_agents, get_agent_token, create_team_a, create_team_b

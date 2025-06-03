@@ -1,7 +1,7 @@
 # @package _global_
 # Default agent configuration
 
-agents_config: null  # Path to custom agents.yaml, null uses default from src/bioagents/config/
+agents_config: null  # Path to custom agents.yaml, null uses default from src/biomlagents/config/
 
 # Agent team configuration
 team_composition:

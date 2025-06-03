@@ -1,4 +1,4 @@
-# Workflow Templates for BioAgents Tasks
+# Workflow Templates for biomlagents Tasks
 # These templates define standard workflows that can be reused across tasks
 
 standard_ml_prediction:

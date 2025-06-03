@@ -1,4 +1,4 @@
-"""Evaluation module for bioagents."""
+"""Evaluation module for biomlagents."""
 
 from .public_evaluator import PublicEvaluator
 

@@ -1,4 +1,4 @@
-"""Configuration package for bioagents framework."""
+"""Configuration package for biomlagents framework."""
 
 from .loader import load_and_validate_task, load_agent_configs, format_task_context
 from .schemas import (

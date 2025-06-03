@@ -1,4 +1,4 @@
-"""Configuration loading and validation for bioagents."""
+"""Configuration loading and validation for biomlagents."""
 
 import yaml
 from pathlib import Path

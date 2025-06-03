@@ -1,4 +1,4 @@
-"""Research tools for bioagents framework."""
+"""Research tools for biomlagents framework."""
 
 import os
 import re

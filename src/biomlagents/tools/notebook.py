@@ -1,4 +1,4 @@
-"""Lab notebook functionality for bioagents."""
+"""Lab notebook functionality for biomlagents."""
 
 import os
 import datetime

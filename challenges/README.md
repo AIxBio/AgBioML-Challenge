@@ -1,6 +1,6 @@
-# BioAgents Challenges
+# biomlagents Challenges
 
-This directory contains biomedical machine learning challenges for the BioAgents framework. Each challenge follows a standardized structure to ensure compatibility with the autonomous agent system.
+This directory contains biomedical machine learning challenges for the biomlagents framework. Each challenge follows a standardized structure to ensure compatibility with the autonomous agent system.
 
 ## Challenge Structure
 
@@ -62,7 +62,7 @@ evaluation:
 
 docker:
   gpu_required: false
-  base_image: millerh1/bioagents:latest
+  base_image: millerh1/biomlagents:latest
   additional_packages: null
 ```
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 If your challenge requires specific dependencies beyond the base image:
 
 ```dockerfile
-FROM millerh1/bioagents:latest
+FROM millerh1/biomlagents:latest
 
 # Install additional dependencies
 RUN pip install special-package==1.0.0
@@ -169,10 +169,10 @@ Before submitting, test your challenge:
 
 ```bash
 # Validate configuration
-bioagents task_dir=challenges/your_challenge dry_run=true
+biomlagents task_dir=challenges/your_challenge dry_run=true
 
 # Run with minimal iterations for testing
-bioagents task_dir=challenges/your_challenge max_iterations=2
+biomlagents task_dir=challenges/your_challenge max_iterations=2
 
 # Test evaluation script
 python challenges/your_challenge/scripts/evaluate.py \

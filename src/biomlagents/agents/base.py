@@ -1,4 +1,4 @@
-"""Base agent implementations for the bioagents framework."""
+"""Base agent implementations for the biomlagents framework."""
 
 import time
 from typing import Sequence, List, Dict, Any, Optional

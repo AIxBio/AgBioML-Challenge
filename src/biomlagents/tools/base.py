@@ -1,4 +1,4 @@
-"""Base tools for bioagents framework."""
+"""Base tools for biomlagents framework."""
 
 import os
 import glob

@@ -1,4 +1,4 @@
-"""Configuration schemas for bioagents using Pydantic."""
+"""Configuration schemas for biomlagents using Pydantic."""
 
 from pydantic import BaseModel, Field, validator
 from typing import List, Dict, Optional, Any
@@ -39,7 +39,7 @@ class EvaluationConfig(BaseModel):
 class DockerConfig(BaseModel):
     """Schema for Docker configuration."""
     gpu_required: bool = False
-    base_image: str = "millerh1/bioagents:latest"
+    base_image: str = "millerh1/biomlagents:latest"
     additional_packages: Optional[List[str]] = None
 
 

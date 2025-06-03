@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Multirun Analysis Script for BioAgents Experiments
+Comprehensive Multirun Analysis Script for biomlagents Experiments
 
 This script analyzes the results from multirun experiments comparing:
 - Model performance (gpt-4.1 vs gpt-4o)
@@ -41,7 +41,7 @@ plt.rcParams.update({
 })
 
 class MultirunAnalyzer:
-    """Analyzer for BioAgents multirun experiment results."""
+    """Analyzer for biomlagents multirun experiment results."""
     
     def __init__(self, multirun_dir: Path):
         """Initialize analyzer with multirun directory."""
@@ -384,7 +384,7 @@ class MultirunAnalyzer:
             
             # Set y-axis limit to 26% above the maximum value
             if max_top_value > 0:
-                ax.set_ylim(bottom=0, top=max_top_value * 1.26)
+                ax.set_ylim(bottom=0, top=max_top_value * 1.30)
             
             # Formatting
             ax.set_title(title)
@@ -447,7 +447,7 @@ class MultirunAnalyzer:
             ax.set_ylabel('Completion Rate (↑)', fontsize=20)
             ax.set_xticks(x_pos)
             ax.set_xticklabels(models, fontsize=22)
-            ax.set_ylim(0, max_rate * 1.09)
+            ax.set_ylim(0, max_rate * 1.20)
             
             # Add legend with all model-evaluation combinations
             if legend_entries:
@@ -638,7 +638,7 @@ class MultirunAnalyzer:
         
         # Token Efficiency (Output/Input ratio)
         create_resource_grouped_plot(axes[1, 2], self.results_df, 'output_input_token_ratio',
-                                   'Token Efficiency (Output/Input)', 'Output/Input Token Ratio (↑)')
+                                   'Token Efficiency (Output/Input)', 'Output/Input Token Ratio')
         
         plt.tight_layout()
         plt.savefig(save_dir / 'resource_efficiency_analysis.png', dpi=300, bbox_inches='tight')
@@ -651,7 +651,7 @@ class MultirunAnalyzer:
             raise ValueError("Must compile results and calculate summary stats first")
         
         report_lines = [
-            "# BioAgents Multirun Experiment Analysis Report",
+            "# biomlagents Multirun Experiment Analysis Report",
             f"Generated from: {self.multirun_dir}",
             f"Analysis date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "",
@@ -849,7 +849,7 @@ class MultirunAnalyzer:
 
 def main():
     """Main entry point for the analysis script."""
-    parser = argparse.ArgumentParser(description='Analyze BioAgents multirun experiment results')
+    parser = argparse.ArgumentParser(description='Analyze biomlagents multirun experiment results')
     parser.add_argument('multirun_dir', type=str, 
                        help='Path to multirun output directory')
     parser.add_argument('--output-dir', type=str, default=None,

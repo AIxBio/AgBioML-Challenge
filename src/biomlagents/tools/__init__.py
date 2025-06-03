@@ -1,4 +1,4 @@
-"""Tools module for bioagents framework."""
+"""Tools module for biomlagents framework."""
 
 from .notebook import (
     initialize_notebook,

@@ -1,4 +1,4 @@
-# Default resource configuration for bioagents
+# Default resource configuration for biomlagents
 # This can be overridden for different deployments
 
 compute:

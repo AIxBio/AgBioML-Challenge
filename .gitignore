@@ -12,3 +12,6 @@ lab_notebook.md
 *.egg-info
 outputs
 workdir
+*.pdf
+solution
+*.tar.gz

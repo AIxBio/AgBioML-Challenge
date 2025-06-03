@@ -1,4 +1,4 @@
-"""Command-line interface for bioagents using Hydra."""
+"""Command-line interface for biomlagents using Hydra."""
 
 import asyncio
 import logging
@@ -22,8 +22,8 @@ CONF_DIR = Path(__file__).parent.parent.parent / "conf"
 
 
 @hydra.main(config_path=str(CONF_DIR.absolute()), config_name="config", version_base=None)
-def bioagents(cfg: DictConfig) -> None:
-    """Main entry point for bioagents CLI."""
+def biomlagents(cfg: DictConfig) -> None:
+    """Main entry point for biomlagents CLI."""
     # Convert to dictionary for easier handling
     config = OmegaConf.to_container(cfg, resolve=True)
     
@@ -124,8 +124,8 @@ def bioagents(cfg: DictConfig) -> None:
 
 
 def main():
-    """Entry point for the bioagents CLI."""
-    bioagents()
+    """Entry point for the biomlagents CLI."""
+    biomlagents()
 
 
 if __name__ == "__main__":
