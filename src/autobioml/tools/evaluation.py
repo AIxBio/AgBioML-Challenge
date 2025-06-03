@@ -1,4 +1,4 @@
-"""Evaluation tools for biomlagents framework."""
+"""Evaluation tools for autobioml framework."""
 
 from typing import Dict, Any, Optional
 from pathlib import Path

@@ -1,4 +1,4 @@
-"""Base tools for biomlagents framework."""
+"""Base tools for autobioml framework."""
 
 import os
 import glob

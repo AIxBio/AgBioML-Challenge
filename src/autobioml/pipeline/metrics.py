@@ -1,4 +1,4 @@
-"""Pipeline metrics tracking for biomlagents framework."""
+"""Pipeline metrics tracking for autobioml framework."""
 
 import time
 import json

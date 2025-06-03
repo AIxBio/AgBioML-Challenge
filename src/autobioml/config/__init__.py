@@ -1,4 +1,4 @@
-"""Configuration package for biomlagents framework."""
+"""Configuration package for autobioml framework."""
 
 from .loader import load_and_validate_task, load_agent_configs, format_task_context
 from .schemas import (

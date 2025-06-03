@@ -1,4 +1,4 @@
-"""Tools module for biomlagents framework."""
+"""Tools module for autobioml framework."""
 
 from .notebook import (
     initialize_notebook,

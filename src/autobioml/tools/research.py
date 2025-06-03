@@ -1,4 +1,4 @@
-"""Research tools for biomlagents framework."""
+"""Research tools for autobioml framework."""
 
 import os
 import re

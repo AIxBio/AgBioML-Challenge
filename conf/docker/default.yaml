@@ -3,7 +3,7 @@
 
 # Docker executor settings
 docker:
-  image: millerh1/biomlagents:latest
+  image: millerh1/autobioml:latest
   timeout: 1800  # 30 minutes
   work_dir: ${hydra:runtime.output_dir}
   

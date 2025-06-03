@@ -1,4 +1,4 @@
-"""Entry point for running biomlagents as a module."""
+"""Entry point for running autobioml as a module."""
 
 from .cli import main
 

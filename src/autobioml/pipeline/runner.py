@@ -1,4 +1,4 @@
-"""Main pipeline runner for biomlagents framework."""
+"""Main pipeline runner for autobioml framework."""
 
 import os
 import asyncio

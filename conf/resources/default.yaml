@@ -1,4 +1,4 @@
-# Default resource configuration for biomlagents
+# Default resource configuration for autobioml
 # This can be overridden for different deployments
 
 compute:

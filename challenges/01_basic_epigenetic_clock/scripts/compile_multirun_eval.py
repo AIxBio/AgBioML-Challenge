@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Multirun Analysis Script for biomlagents Experiments
+Comprehensive Multirun Analysis Script for autobioml Experiments
 
 This script analyzes the results from multirun experiments comparing:
 - Model performance (gpt-4.1 vs gpt-4o)
@@ -41,7 +41,7 @@ plt.rcParams.update({
 })
 
 class MultirunAnalyzer:
-    """Analyzer for biomlagents multirun experiment results."""
+    """Analyzer for autobioml multirun experiment results."""
     
     def __init__(self, multirun_dir: Path):
         """Initialize analyzer with multirun directory."""
@@ -651,7 +651,7 @@ class MultirunAnalyzer:
             raise ValueError("Must compile results and calculate summary stats first")
         
         report_lines = [
-            "# biomlagents Multirun Experiment Analysis Report",
+            "# autobioml Multirun Experiment Analysis Report",
             f"Generated from: {self.multirun_dir}",
             f"Analysis date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "",
@@ -849,7 +849,7 @@ class MultirunAnalyzer:
 
 def main():
     """Main entry point for the analysis script."""
-    parser = argparse.ArgumentParser(description='Analyze biomlagents multirun experiment results')
+    parser = argparse.ArgumentParser(description='Analyze autobioml multirun experiment results')
     parser.add_argument('multirun_dir', type=str, 
                        help='Path to multirun output directory')
     parser.add_argument('--output-dir', type=str, default=None,

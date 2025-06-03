@@ -1,4 +1,4 @@
-"""Pipeline package for biomlagents framework."""
+"""Pipeline package for autobioml framework."""
 
 from .runner import run_pipeline, cleanup_temp_files, format_prompt
 

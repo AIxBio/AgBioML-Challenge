@@ -1,4 +1,4 @@
-"""biomlagents - A framework for autonomous biomedical ML research agents."""
+"""autobioml - A framework for autonomous biomedical ML research agents."""
 
 import os
 from pathlib import Path

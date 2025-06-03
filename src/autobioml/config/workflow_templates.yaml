@@ -1,4 +1,4 @@
-# Workflow Templates for biomlagents Tasks
+# Workflow Templates for autobioml Tasks
 # These templates define standard workflows that can be reused across tasks
 
 standard_ml_prediction:

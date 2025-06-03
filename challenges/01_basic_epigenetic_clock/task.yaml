@@ -102,5 +102,5 @@ report_requirements:
 
 docker:
   gpu_required: false
-  base_image: millerh1/biomlagents:latest
+  base_image: millerh1/autobioml:latest
   additional_packages: null 
