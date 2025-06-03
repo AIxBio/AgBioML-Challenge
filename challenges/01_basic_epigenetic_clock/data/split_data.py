@@ -65,6 +65,9 @@ assert np.all(metadata_agents.index == betas_agents.index)
 metadata_agents.to_feather('agent/metadata.arrow')
 betas_agents.to_feather('agent/betas.arrow')
 
+# Assert that no dataset in metadata_agents is in metadata_heldout
+assert not any(metadata_agents.dataset.isin(metadata_heldout.dataset)), "Dataset overlap detected between agent and heldout!"
+
 # Print summary with study-level information
 print(f"\nTotal samples: {len(metadata)}")
 print(f"Agent samples: {len(metadata_agents)}")
