@@ -102,9 +102,7 @@ def autobioml(cfg: DictConfig) -> None:
         for metric in task_config.evaluation.metrics:
             print(f"- {metric.name}: {metric.threshold} on {metric.dataset}")
         return
-    
-    breakpoint()
-    
+        
     # Run the pipeline
     asyncio.run(run_pipeline(
         task_config=task_config,
