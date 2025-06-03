@@ -1,4 +1,4 @@
-# Agentic BioML Challenge + AutoBioML Framework
+# Agentic BioML Challenge + AutoBioML Framework (v0)
 
 ## 📝 Challenge Description
 
@@ -74,8 +74,7 @@ autobioml task_dir=challenges/01_basic_epigenetic_clock \
 
 1. **Planning Phase**: Team A analyzes the task and creates implementation specifications
 2. **Implementation Phase**: Team B develops and executes the solution
-3. **Review Phase**: Critical evaluation and iterative improvement
-4. **Completion**: Verified solution with model checkpoint and evaluation
+3. **Completion**: Agent-created model evaluated
 
 ### 🎯 Public Evaluation System
 
@@ -83,7 +82,7 @@ autobioml includes a public/private evaluation system that mirrors real ML compe
 
 **How It Works:**
 1. **Data Split**: Test data is split 50/50 into public and private subsets
-2. **Public Testing**: Agents MUST evaluate on the public subset (up to X times)
+2. **Public Testing**: Agents evaluate on the public subset (up to X times)
 3. **Final Scoring**: Final evaluation uses the private subset
 
 **For Agents:**
@@ -95,7 +94,7 @@ autobioml includes a public/private evaluation system that mirrors real ML compe
 
 **Default Behavior:**
 - Public evaluation is **enabled by default** 
-- To disable (not recommended): `enable_public_evaluation=false`
+- To disable: `enable_public_evaluation=false`
 
 ### 🎛️ Configuration System
 
