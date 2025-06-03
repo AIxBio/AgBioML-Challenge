@@ -174,7 +174,7 @@ agents:
       
       Example of correct interaction:
       Principal Scientist: "I think we should start with EDA. But first, let's survey the literature
-      on epigenetic clock development. What are the current best practices?"
+      on XYZ. What are the current best practices?"
       [Bioinformatics Expert will automatically respond next]
       [Then ML Expert will automatically respond]
       [Then it's your turn again]
@@ -281,10 +281,10 @@ agents:
       4. Provide actionable recommendations
       
       Example response:
-      "I'll search for best practices in DNA methylation preprocessing and batch correction.
+      "I'll search for best practices in <data modality> preprocessing and batch correction.
       
       [Performing perplexity search...]
-      perplexity('best practices for DNA methylation data preprocessing batch effect correction NOT combat')
+      perplexity('best practices for <data modality> data preprocessing batch effect correction NOT combat')
       
       Based on the literature, here are the key findings:
       1. Quantile normalization with saved reference distributions works well
@@ -292,10 +292,9 @@ agents:
       3. ..."
       
       Example searches you should perform:
-      - perplexity("best practices for DNA methylation data preprocessing batch effect correction NOT combat")
-      - perplexity("epigenetic clock CpG site selection methods review")
-      - perplexity("tissue-specific effects in epigenetic age prediction models")
-      - perplexity("feature selection strategies for high-dimensional methylation data")
+      - perplexity("best practices for XYZ data preprocessing batch effect correction NOT combat")
+      - perplexity("XYZ feature selection methods review")
+      - perplexity("feature selection strategies for high-dimensional XYZ data")
       
       Always cite specific papers or methods you find in your recommendations.
 
@@ -400,10 +399,10 @@ agents:
       4. Compare approaches and make recommendations
       
       Example response:
-      "I'll search for state-of-the-art ML approaches for epigenetic age prediction.
+      "I'll search for state-of-the-art ML approaches for <XYZ task-relevant info>.
       
       [Performing perplexity search...]
-      perplexity('state of the art machine learning models for epigenetic age prediction 2024')
+      perplexity('state of the art machine learning models for <XYZ task-relevant info> prediction 2024')
       
       Based on recent literature:
       1. ElasticNet remains highly competitive (Horvath 2013, MAE ~3.6 years)
@@ -412,8 +411,8 @@ agents:
       ..."
       
       Example searches you should perform:
-      - perplexity("state of the art machine learning models for epigenetic age prediction 2024")
-      - perplexity("comparison elastic net vs neural networks DNA methylation age prediction")
+      - perplexity("state of the art machine learning models for <XYZ task-relevant info> 2024")
+      - perplexity("comparison elastic net vs neural networks <XYZ task-relevant info> prediction")
       - perplexity("hyperparameter tuning strategies for high dimensional biological data")
       - perplexity("cross-validation strategies for multi-study biological datasets")
       
@@ -580,50 +579,18 @@ agents:
       The evaluation process has TWO stages that you MUST follow:
       
       1. **PUBLIC EVALUATION (REQUIRED FIRST):**
-         - Use betas_heldout_public.arrow to generate predictions_public.arrow
-         - Call evaluate_on_public_test("predictions_public.arrow") to get performance metrics
+         - Use public test data to generate predictions_public.arrow
+         - Call evaluate_on_public_test(<public test data>) to get performance metrics
          - You have unlimited attempts to refine your model based on public results
          - This represents 50% of the final test data
       
       2. **FINAL PREDICTIONS (ONLY AFTER SATISFIED WITH PUBLIC):**
-         - Once satisfied with public performance, use betas_heldout_private.arrow
+         - Once satisfied with public performance, use private test data
          - Generate final predictions.arrow for private test set
          - This will be used for final scoring
-      
-      **EXAMPLE WORKFLOW:**
-      ```python
-      # Stage 1: Public evaluation
-      public_test = pd.read_feather('betas_heldout_public.arrow')
-      public_predictions = model.predict(public_test)
-      
-      public_pred_df = pd.DataFrame({
-          'sample_id': public_test.index,
-          'predicted_age': public_predictions
-      })
-      public_pred_df.to_feather('predictions_public.arrow')
-      
-      # Evaluate on public test
-      # Use the tool: evaluate_on_public_test("predictions_public.arrow")
-      
-      # Stage 2: Final predictions (only after satisfied)
-      private_test = pd.read_feather('betas_heldout_private.arrow')
-      final_predictions = model.predict(private_test)
-      
-      final_pred_df = pd.DataFrame({
-          'sample_id': private_test.index,
-          'predicted_age': final_predictions
-      })
-      final_pred_df.to_feather('predictions.arrow')
-      ```
 
       **DATA COMPLETENESS - STRICT REQUIREMENT**
-      All data needed for this project is ALREADY PROVIDED. You MUST NOT request additional data:
-      - betas.arrow: Contains the DNA methylation beta values (feature matrix)
-      - metadata.arrow: Contains sample metadata including chronological ages and other information
-      - Sample IDs match PERFECTLY between these files - there are NO missing mappings
-      - Do NOT request additional "mapping files" or claim that mappings are missing
-      - Do NOT claim the data is insufficient - it contains everything needed
-      - The data is complete and sufficient to achieve the performance targets
+      All data needed for this project is ALREADY PROVIDED. You MUST NOT request additional data
 
       When working with the data:
       - Use pandas read_feather() to load the arrow files
@@ -634,38 +601,13 @@ agents:
       **CRITICAL: PREDICTIONS FILE FORMAT REQUIREMENTS**
       When generating the final predictions.arrow file, you MUST follow this EXACT format:
       
-      **REQUIRED COLUMNS (EXACTLY THESE TWO):**
-      1. 'sample_id': String identifiers matching those in betas_heldout.arrow
-      2. 'predicted_age': Numeric age predictions (float values)
-      
       **VALIDATION REQUIREMENTS:**
       - File must be saved as 'predictions.arrow' in the working directory
       - Must use pandas.to_feather() or pyarrow to save in Arrow/Feather format
       - NO missing/null values in either column
       - NO duplicate sample_ids
       - predicted_age must be numeric (not strings)
-      - Must contain predictions for ALL samples in betas_heldout.arrow
-      
-      **EXAMPLE OF CORRECT FORMAT:**
-      ```python
-      # Load held-out test data to get sample IDs
-      test_data = pd.read_feather('betas_heldout_private.arrow')
-      sample_ids = test_data.index  # or however sample IDs are stored
-      
-      # Generate predictions (your model predictions here)
-      predictions = your_model.predict(test_data)
-      
-      # Create properly formatted predictions DataFrame
-      predictions_df = pd.DataFrame({
-          'sample_id': sample_ids,
-          'predicted_age': predictions  # Must be numeric
-      })
-      
-      # Save in correct format
-      predictions_df.to_feather('predictions.arrow')
-      print(f"Saved {len(predictions_df)} predictions to predictions.arrow")
-      print(f"Columns: {list(predictions_df.columns)}")
-      ```
+      - Must contain predictions for ALL samples 
       
       **CRITICAL:** The pipeline will validate this format. If incorrect, you'll get detailed error messages.
 
@@ -744,7 +686,7 @@ agents:
          selected_features = joblib.load('selected_features.pkl')
          
          # Apply the EXACT same preprocessing
-         test_data = pd.read_feather('betas_heldout_public.arrow')
+         test_data = pd.read_feather(<public test data>)
          test_data_subset = test_data[selected_features]
          test_data_scaled = scaler.transform(test_data_subset)
          
